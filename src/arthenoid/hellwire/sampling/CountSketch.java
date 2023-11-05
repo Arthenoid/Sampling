@@ -3,14 +3,14 @@ package arthenoid.hellwire.sampling;
 public class CountSketch {
   protected final Context context;
   protected final int d, t;
-  protected final long[][] C;
+  protected final double[][] C;
   protected final Hash[] h, g;
   
   public CountSketch(Context context, int t, int d) {
     this.context = context;
     this.t = t;
     this.d = d;
-    C = new long[d][t];
+    C = new double[d][t];
     h = new Hash[d];
     g = new Hash[d];
     for (int j = 0; j < d; j++) {
@@ -19,12 +19,12 @@ public class CountSketch {
     }
   }
   
-  public void update(long i, long w) {
+  public void update(long i, double w) {
     for (int j = 0; j < d; j++) C[j][(int) h[j].toRange(i, t)] += w * g[j].toSign(i);
   }
   
-  public long query(long x) {
-    long[] e = new long[d];
+  public double query(long x) {
+    double[] e = new double[d];
     for (int j = 0; j < d; j++) e[j] = C[j][(int) h[j].toRange(x, t)] * g[j].toSign(x);
     return Util.mutMedian(e);
   }

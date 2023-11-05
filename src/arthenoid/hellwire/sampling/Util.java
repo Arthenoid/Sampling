@@ -3,25 +3,25 @@ package arthenoid.hellwire.sampling;
 import java.util.Arrays;
 
 public class Util {
-  public static void swap(long[] vals, int i, int j) {
-    long x = vals[i];
+  public static void swap(double[] vals, int i, int j) {
+    double x = vals[i];
     vals[i] = vals[j];
     vals[j] = x;
   }
   
-  public static long mutMedian(long[] vals) {
+  public static double mutMedian(double[] vals) {
     return mutMedian(vals, 0, vals.length);
   }
   
-  public static long mutSelect(int k, long[] vals) {
+  public static double mutSelect(int k, double[] vals) {
     return mutSelect(k, vals, 0, vals.length);
   }
   
-  public static long mutMedian(long[] vals, int from, int to) {
+  public static double mutMedian(double[] vals, int from, int to) {
     return mutSelect((to - from) >> 1, vals, from, to);
   }
   
-  public static long mutSelect(int k, long[] vals, int from, int to) {
+  public static double mutSelect(int k, double[] vals, int from, int to) {
     k += from;
     for (;;) {
       if (from >= to - 1) return vals[from];
@@ -40,7 +40,7 @@ public class Util {
         Arrays.sort(vals, i, i + 5);
         swap(vals, ito++, i + 2);
       }
-      long pivot = mutMedian(vals, from, ito);
+      double pivot = mutMedian(vals, from, ito);
       ifrom = from;
       ito = to - 1;
       while (ito <= ifrom) {
