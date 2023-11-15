@@ -1,4 +1,4 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.context;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +40,8 @@ public class BasicContext implements Context {
   
   @Override
   public Hash newHash() {
-    return new LinearHash(this);
+    //return new LinearHash(this);
+    return new MurmurHash(random.nextInt());
   }
   
   @Override

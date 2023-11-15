@@ -1,5 +1,8 @@
 package arthenoid.hellwire.sampling;
 
+import arthenoid.hellwire.sampling.context.Context;
+import arthenoid.hellwire.sampling.context.Hash;
+import arthenoid.hellwire.sampling.structures.CountSketch;
 import java.util.Random;
 
 public class PrecisionSampler {

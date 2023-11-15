@@ -1,4 +1,4 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.context;
 
 public class LinearHash implements Hash {
   protected final long a, b, p;

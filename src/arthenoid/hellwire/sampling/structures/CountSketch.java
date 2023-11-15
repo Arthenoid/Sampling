@@ -1,4 +1,8 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.structures;
+
+import arthenoid.hellwire.sampling.context.Context;
+import arthenoid.hellwire.sampling.context.Hash;
+import arthenoid.hellwire.sampling.Util;
 
 public class CountSketch {
   protected final Context context;

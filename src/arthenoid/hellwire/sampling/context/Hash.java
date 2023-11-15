@@ -1,4 +1,4 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.context;
 
 public interface Hash {
   long toRange(long x, long bound);

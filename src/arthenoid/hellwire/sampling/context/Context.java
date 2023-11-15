@@ -1,4 +1,4 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.context;
 
 public interface Context {
   long getPrime();
