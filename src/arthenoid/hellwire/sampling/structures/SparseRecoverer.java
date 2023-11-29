@@ -1,5 +1,6 @@
 package arthenoid.hellwire.sampling.structures;
 
+import arthenoid.hellwire.sampling.IntegerResult;
 import arthenoid.hellwire.sampling.context.Context;
 
 public class SparseRecoverer {
@@ -23,23 +24,14 @@ public class SparseRecoverer {
     p = (p + w * context.powP(r, i)) % prime;
   }
   
-  public static class Result {
-    public final long i,  weight;
-    
-    public Result(long i, long weight) {
-      this.i = i;
-      this.weight = weight;
-    }
-  }
-  
-  public Result query() {
-    if (ℓ == 0 && z == 0 && p == 0) return new Result(0, 0);
+  public IntegerResult query() {
+    if (ℓ == 0 && z == 0 && p == 0) return new IntegerResult(0, 0);
     long prime = context.getPrime();
     if (ℓ < 0) ℓ += prime;
     if (z < 0) z += prime;
     if (p < 0) p += prime;
     long i = z / ℓ;
     if (i >= n || p != (ℓ * context.powP(r, i) + prime) % prime) return null;
-    return new Result(i, ℓ);
+    return new IntegerResult(i, ℓ);
   }
 }

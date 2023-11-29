@@ -35,24 +35,14 @@ public class PrecisionSampler {
     D.update(i, w / Math.sqrt(u(i)));
   }
   
-  public static class Result {
-    public final long i;
-    public final double weight;
-    
-    public Result(long i, double weight) {
-      this.i = i;
-      this.weight = weight;
-    }
-  }
-  
-  public Result query() {
-    Result res = null;
+  public RealResult query() {
+    RealResult res = null;
     for (long i = 0; i < n; i++) {
       double g2 = D.query(i);
       g2 *= g2;
       if (g2 < 4 / ε) continue;
       if (res != null) return null;
-      res = new Result(i, g2 * u(i));
+      res = new RealResult(i, g2 * u(i));
     }
     return res;
   }
