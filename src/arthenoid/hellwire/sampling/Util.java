@@ -3,6 +3,8 @@ package arthenoid.hellwire.sampling;
 import java.util.Arrays;
 
 public class Util {
+  private Util() {}
+  
   public static void swap(double[] vals, int i, int j) {
     double x = vals[i];
     vals[i] = vals[j];

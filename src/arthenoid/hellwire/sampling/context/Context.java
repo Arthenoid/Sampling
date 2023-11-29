@@ -12,4 +12,14 @@ public interface Context {
   Hash newHash();
   
   Hash staticHash(int key);
+  
+  default long powP(long a, long b) {
+    long prime = getPrime(), ret = 1;
+    while (b > 0) {
+      if ((b & 1) != 0) ret = (ret * a) % prime;
+      b >>= 1;
+      a = (a * a) % prime;
+    }
+    return ret;
+  }
 }
