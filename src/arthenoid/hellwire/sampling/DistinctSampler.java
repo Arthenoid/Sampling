@@ -11,20 +11,21 @@ public class DistinctSampler {
   protected final Subsampler[] subsamplers;
   
   protected class Subsampler {
-    protected final Hash[] h;
+    protected final Hash h;
     protected final SparseRecoverer[] D;
     
     public Subsampler() {
-      h = new Hash[log2n + 1];
+      h = context.newHash();
       D = new SparseRecoverer[log2n + 1];
       for (int ℓ = 0; ℓ <= log2n; ℓ++) {
-        h[ℓ] = context.newHash();
         D[ℓ] = new SparseRecoverer(context, n);
       }
     }
     
     public void update(long i, long w) {
-      for (int ℓ = 0; ℓ <= log2n; ℓ++) if (h[ℓ].toRange(i, 1 << ℓ) == 0) D[ℓ].update(i, w);
+      D[0].update(i, w);
+      int ℓ = 1;
+      for (long hash = h.toRange(i, 1L << log2n); (hash & 1) > 0; hash >>>= 1) D[ℓ++].update(i, w);
     }
     
     public IntegerResult query() {
