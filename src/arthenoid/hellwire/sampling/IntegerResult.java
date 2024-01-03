@@ -1,10 +1,15 @@
 package arthenoid.hellwire.sampling;
 
-public class IntegerResult {
-  public final long i,  weight;
+public class IntegerResult extends Result<Long> {
+  public final long weight;
   
   public IntegerResult(long i, long weight) {
-    this.i = i;
+    super(i);
     this.weight = weight;
+  }
+  
+  @Override
+  public Long getWeight() {
+    return weight;
   }
 }

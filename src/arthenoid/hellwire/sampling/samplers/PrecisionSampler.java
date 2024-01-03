@@ -1,11 +1,12 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.samplers;
 
+import arthenoid.hellwire.sampling.RealResult;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.CountSketch;
 import java.util.Random;
 
-public class PrecisionSampler {
+public class PrecisionSampler implements RealSampler {
   protected final Context context;
   protected final long n;
   protected final double δ, ε;
@@ -58,11 +59,13 @@ public class PrecisionSampler {
     for (int i = 0; i < repeat; i++) subsamplers[i] = new Subsampler();
   }
   
+  @Override
   public void update(long i, double w) {
     if (i < 0 || i >= n) throw new IllegalArgumentException();
     for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
   }
   
+  @Override
   public RealResult query() {
     for (Subsampler subsampler : subsamplers) {
       RealResult res = subsampler.query();

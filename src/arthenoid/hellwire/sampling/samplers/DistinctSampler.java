@@ -1,10 +1,11 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.samplers;
 
+import arthenoid.hellwire.sampling.IntegerResult;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.SparseRecoverer;
 
-public class DistinctSampler {
+public class DistinctSampler implements IntegerSampler {
   protected final Context context;
   protected final long n;
   protected final int log2n;
@@ -45,11 +46,13 @@ public class DistinctSampler {
     for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler();
   }
   
+  @Override
   public void update(long i, long w) {
     if (i < 0 || i >= n) throw new IllegalArgumentException();
     for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
   }
   
+  @Override
   public IntegerResult query() {
     for (Subsampler subsampler : subsamplers) {
       IntegerResult res = subsampler.query();
