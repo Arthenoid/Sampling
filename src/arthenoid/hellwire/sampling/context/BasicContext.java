@@ -3,25 +3,28 @@ package arthenoid.hellwire.sampling.context;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Function;
 
 public class BasicContext implements Context {
   final long prime;
   final Random random;
+  final Function<Context, Hash> hasher;
   
   final Map<Integer, Hash> staticHashes;
   
-  public BasicContext(long prime, Random random) {
+  public BasicContext(long prime, Random random, Function<Context, Hash> hasher) {
     this.prime = prime;
     this.random = random;
+    this.hasher = hasher;
     staticHashes = new HashMap<>();
   }
   
-  public BasicContext(long prime, long seed) {
-    this(prime, new Random(seed));
+  public BasicContext(long prime, long seed, Function<Context, Hash> hasher) {
+    this(prime, new Random(seed), hasher);
   }
   
-  public BasicContext(long prime) {
-    this(prime, new Random());
+  public BasicContext(long prime, Function<Context, Hash> hasher) {
+    this(prime, new Random(), hasher);
   }
   
   @Override
@@ -40,8 +43,7 @@ public class BasicContext implements Context {
   
   @Override
   public Hash newHash() {
-    //return new LinearHash(this);
-    return new MurmurHash(random.nextInt());
+    return hasher.apply(this);
   }
   
   @Override

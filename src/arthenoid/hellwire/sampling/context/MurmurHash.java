@@ -7,6 +7,10 @@ public class MurmurHash implements Hash {
     this.seed = seed;
   }
   
+  public MurmurHash(Context c) {
+    this((int) c.random(1L << Integer.SIZE));
+  }
+  
   public static int murmur32Scramble(int k) {
     k *= 0xCC9E2D51;
     k = (k << 15) | (k >>> 17);
