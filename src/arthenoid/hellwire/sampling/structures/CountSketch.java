@@ -1,8 +1,8 @@
 package arthenoid.hellwire.sampling.structures;
 
+import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
-import arthenoid.hellwire.sampling.Util;
 
 public class CountSketch {
   protected final Context context;
@@ -36,5 +36,14 @@ public class CountSketch {
   public void merge(CountSketch other) {
     if (other.context != context || other.t != t || other.d != d) throw new IllegalArgumentException("Sketches have different parameters.");
     for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
+  }
+  
+  public double norm(double p) {
+    double[] e = new double[d];
+    for (int j = 0; j < d; j++) {
+      e[j] = 0;
+      for (int i = 0; i < t; i++) e[j] += Math.pow(Math.abs(C[j][i]), p);
+    }
+    return Math.pow(Util.mutMedian(e), 1 / p);
   }
 }

@@ -4,6 +4,7 @@ import arthenoid.hellwire.sampling.RealResult;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.CountSketch;
+import java.util.PriorityQueue;
 import java.util.Random;
 
 public class PrecisionSampler implements RealSampler {
@@ -11,38 +12,45 @@ public class PrecisionSampler implements RealSampler {
   protected final long n;
   protected final double δ, ε;
   protected final Random uR;
-  protected final int k;
+  protected final int m;
+  protected final int Dt;
+  protected final int Dd;
   protected final int repeat;
   protected final Subsampler[] subsamplers;
   
   protected class Subsampler {
     protected final Hash uH;
     protected final CountSketch D;
+    protected final CountSketch R;
     
     protected Subsampler() {
       uH = context.newHash();
-      D = new CountSketch(context, k, 1);
+      D = new CountSketch(context, Dt, Dd);
+      R = new CountSketch(context, Dt, Dd);
     }
     
     protected double u(long i) {
       uR.setSeed(uH.toRange(i, n));
-      return (uR.nextDouble() * (n * n - 1) + 1) / (n * n);
+      return uR.nextDouble();
     }
     
     public void update(long i, double w) {
       D.update(i, w / Math.sqrt(u(i)));
+      R.update(i, w);
     }
     
     public RealResult query() {
-      RealResult res = null;
-      for (long i = 0; i < n; i++) {
-        double g2 = D.query(i);
-        g2 *= g2;
-        if (g2 < 4 / ε) continue;
-        if (res != null) return null;
-        res = new RealResult(i, g2 * u(i));
+      PriorityQueue<RealResult> heap = new PriorityQueue<>((r1, r2) -> -Double.compare(Math.abs(r1.weight), Math.abs(r2.weight)));
+      for (long i = 0; i < m; i++) heap.add(new RealResult(i, D.query(i)));
+      for (long i = m; i < n; i++) {
+        heap.add(new RealResult(i, D.query(i)));
+        heap.remove();
       }
-      return res;
+      RealResult[] top = heap.toArray(RealResult[]::new);
+      for (int i = 0; i < m; i++) D.update(top[i].i, -top[i].weight);
+      double s = D.norm(2), r = R.norm(2);
+      for (int i = 0; i < m; i++) D.update(top[i].i, top[i].weight);
+      return s > Math.sqrt(ε * m) * r || Math.abs(top[0].weight) < r / Math.sqrt(ε) ? null : new RealResult(top[0].i, top[0].weight * Math.sqrt(u(top[0].i)));
     }
   }
   
@@ -52,9 +60,11 @@ public class PrecisionSampler implements RealSampler {
     this.δ = δ;
     this.ε = ε;
     uR = new Random();
-    k = (int) Math.round(650 * Math.log(n) / ε);
+    double logN = Math.log(n);
+    m = (int) Math.round(50 * logN / ε);
+    Dt = (int) Math.round(6 * m / logN);
+    Dd = (int) Math.round(logN);
     repeat = (int) Math.round(Math.log(1 / δ) / ε);
-    System.out.println("!!!" + repeat);
     subsamplers = new Subsampler[repeat];
     for (int i = 0; i < repeat; i++) subsamplers[i] = new Subsampler();
   }
