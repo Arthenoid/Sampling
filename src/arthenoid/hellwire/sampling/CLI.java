@@ -135,8 +135,10 @@ public class CLI {
         System.err.println("Unknown argument: " + args[i]);
         System.exit(1);
     }
+    if (prime == 0) prime = 1685727585142753L;
+    if (hasher == null) hasher = MurmurHash::new;
     Scanner in = fin == null ? new Scanner(System.in) : fin;
-    constructorParams[0] = new BasicContext(prime == 0 ? 1685727585142753L : prime, seed == Long.MIN_VALUE ? 666 : seed, hasher == null ? MurmurHash::new : hasher);
+    constructorParams[0] = seed == Long.MIN_VALUE ? new BasicContext(prime, hasher) : new BasicContext(prime, seed, hasher);
     Sampler sampler;
     try {
       sampler = constructor.newInstance(constructorParams);
