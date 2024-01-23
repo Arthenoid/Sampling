@@ -18,9 +18,18 @@ public class CountSketch {
     h = new Hash[d];
     g = new Hash[d];
     for (int j = 0; j < d; j++) {
-      h[j] = context.staticHash(d * (d - 1) + j);
-      g[j] = context.staticHash(d * d + j);
+      h[j] = context.newHash();
+      g[j] = context.newHash();
     }
+  }
+  
+  public CountSketch(CountSketch other) {
+    context = other.context;
+    d = other.d;
+    t = other.t;
+    C = new double[d][t];
+    h = other.h;
+    g = other.g;
   }
   
   public void update(long i, double w) {
@@ -34,7 +43,7 @@ public class CountSketch {
   }
   
   public void merge(CountSketch other) {
-    if (other.context != context || other.t != t || other.d != d) throw new IllegalArgumentException("Sketches have different parameters.");
+    if (other.context != context || other.h != h || other.g != g) throw new IllegalArgumentException("Sketches have different parameters.");
     for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
   }
   
