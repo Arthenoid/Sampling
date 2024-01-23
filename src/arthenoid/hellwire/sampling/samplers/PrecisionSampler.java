@@ -40,17 +40,21 @@ public class PrecisionSampler implements RealSampler {
     }
     
     public RealResult query() {
-      PriorityQueue<RealResult> heap = new PriorityQueue<>((r1, r2) -> -Double.compare(Math.abs(r1.weight), Math.abs(r2.weight)));
+      PriorityQueue<RealResult> heap = new PriorityQueue<>((r1, r2) -> Double.compare(Math.abs(r1.weight), Math.abs(r2.weight)));
       for (long i = 0; i < m; i++) heap.add(new RealResult(i, D.query(i)));
       for (long i = m; i < n; i++) {
         heap.add(new RealResult(i, D.query(i)));
         heap.remove();
       }
       RealResult[] top = heap.toArray(RealResult[]::new);
-      for (int i = 0; i < m; i++) D.update(top[i].i, -top[i].weight);
+      RealResult peak = top[0];
+      for (int i = 0; i < m; i++) {
+        D.update(top[i].i, -top[i].weight);
+        if (Math.abs(top[i].weight) > Math.abs(peak.weight)) peak = top[i];
+      }
       double s = D.norm(2), r = R.norm(2);
       for (int i = 0; i < m; i++) D.update(top[i].i, top[i].weight);
-      return s > Math.sqrt(ε * m) * r || Math.abs(top[0].weight) < r / Math.sqrt(ε) ? null : new RealResult(top[0].i, top[0].weight * Math.sqrt(u(top[0].i)));
+      return s > Math.sqrt(ε * m) * r || Math.abs(peak.weight) < r / Math.sqrt(ε) ? null : new RealResult(peak.i, peak.weight * Math.sqrt(u(peak.i)));
     }
   }
   
