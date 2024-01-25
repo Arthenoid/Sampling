@@ -30,7 +30,7 @@ public class PrecisionSampler implements RealSampler {
     }
     
     protected double u(long i) {
-      uR.setSeed(uH.toRange(i, n));
+      uR.setSeed(uH.toRange(i, 1L << 30));
       return uR.nextDouble();
     }
     
