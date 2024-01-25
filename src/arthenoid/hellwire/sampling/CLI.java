@@ -29,7 +29,7 @@ public class CLI {
     try {
       String[] samplerArgs = args[0].split("\\(", 2);
       Class<? extends Sampler> type = (Class<? extends Sampler>) Class.forName("arthenoid.hellwire.sampling.samplers." + samplerArgs[0] + "Sampler");
-      samplerArgs = samplerArgs.length > 1 ? samplerArgs[1].substring(0, samplerArgs[1].length() - 1).split(", ") : new String[0];
+      samplerArgs = samplerArgs.length > 1 ? samplerArgs[1].substring(0, samplerArgs[1].length() - 1).split("\\s*,\\s*") : new String[0];
       for (Constructor<?> cons : type.getConstructors()) {
         if (cons.getParameterCount() != samplerArgs.length + 1 || cons.getParameterTypes()[0] != Context.class) continue;
         if (constructor != null) throw new Exception("Ambiguous constructor");
