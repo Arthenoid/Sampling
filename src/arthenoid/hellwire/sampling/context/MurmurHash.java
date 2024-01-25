@@ -38,6 +38,8 @@ public class MurmurHash implements Hash {
   
   @Override
   public long toRange(long x, long bound) {
-    return Integer.remainderUnsigned(to32bits(x), (int) bound);
+    return bound > Integer.MAX_VALUE
+      ? Long.remainderUnsigned((((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl), bound)
+      : Integer.remainderUnsigned(to32bits(x), (int) bound);
   }
 }
