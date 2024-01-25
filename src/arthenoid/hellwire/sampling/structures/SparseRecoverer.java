@@ -9,7 +9,7 @@ public class SparseRecoverer {
   protected long ℓ, z, p;
   
   public SparseRecoverer(Context context, long n) {
-    if (context.getPrime() <= n * n * n) throw new IllegalArgumentException();
+    if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be at most n^3.");
     this.context = context;
     this.n = n;
     r = context.randomP();
@@ -17,7 +17,7 @@ public class SparseRecoverer {
   }
   
   public void update(long i, long w) {
-    if (i < 0 || i >= n) throw new IllegalArgumentException();
+    if (i < 0 || i >= n) throw new IllegalArgumentException("Item outside of range (" + n + "): " + i);
     long prime = context.getPrime();
     ℓ = (ℓ + w) % prime;
     z = (z + w * i) % prime;

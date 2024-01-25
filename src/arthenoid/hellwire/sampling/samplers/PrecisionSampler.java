@@ -75,7 +75,7 @@ public class PrecisionSampler implements RealSampler {
   
   @Override
   public void update(long i, double w) {
-    if (i < 0 || i >= n) throw new IllegalArgumentException();
+    if (i < 0 || i >= n) throw new IllegalArgumentException("Item outside of range (" + n + "): " + i);
     for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
   }
   
