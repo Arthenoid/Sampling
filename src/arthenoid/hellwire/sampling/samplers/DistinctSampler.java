@@ -26,7 +26,7 @@ public class DistinctSampler implements IntegerSampler {
     public void update(long i, long w) {
       D[0].update(i, w);
       int ℓ = 1;
-      for (long hash = h.toRange(i, 1L << log2n); (hash & 1) > 0; hash >>>= 1) D[ℓ++].update(i, w);
+      for (long hash = h.toBits(i, log2n); (hash & 1) > 0; hash >>>= 1) D[ℓ++].update(i, w);
     }
     
     public IntegerResult query() {

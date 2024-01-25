@@ -6,4 +6,8 @@ public interface Hash {
   default long toSign(long x) {
     return toRange(x, 2) * 2 - 1;
   }
+  
+  default long toBits(long x, int bits) {
+    return toRange(x, 1L << bits);
+  }
 }

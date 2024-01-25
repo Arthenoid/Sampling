@@ -42,4 +42,12 @@ public class MurmurHash implements Hash {
       ? Long.remainderUnsigned((((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl), bound)
       : Integer.remainderUnsigned(to32bits(x), (int) bound);
   }
+  
+  @Override
+  public long toBits(long x, int bits) {
+    long mask = bits < Long.SIZE ? (1L << bits) - 1 : -1;
+    return bits > Integer.SIZE
+      ? ((((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl)) & mask
+      : to32bits(x) & mask;
+  }
 }
