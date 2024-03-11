@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling;
 
 import java.util.Arrays;
+import java.util.Random;
 
 public class Util {
   private Util() {}
@@ -61,5 +62,13 @@ public class Util {
         from = ifrom;
       }
     }
+  }
+  
+  public static long randomLong(Random random, long bound) {
+    if (bound <= Integer.MAX_VALUE) return random.nextInt((int) bound);
+    if (bound <= 0) throw new IllegalArgumentException("Bound must be positive.");
+    long q = bound - 1, s = random.nextLong() >>> 1, r;
+    while (s - (r = s % bound) + q < 0) s = random.nextLong() >>> 1;
+    return r;
   }
 }
