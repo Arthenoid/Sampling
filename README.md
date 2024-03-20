@@ -23,6 +23,8 @@ java -jar Sampling.jar <sampler>(<parameter>..) [<argument>]...
 | `seed <seed>` | Sets the seed for random number generation. If not set, chooses random. |
 | `hash <hash>` | Sets the hash. If not set, uses Murmur hash. |
 | `H <hash>` | Alias for `hash` |
+| `test` | Consumes generated test data. |
+| `T` | Alias for `test` |
 
 ### Available samplers
 
@@ -46,8 +48,10 @@ java -jar Sampling.jar "Distinct(42)" H Linear seed 42 in  data/updates.txt
 java -jar Sampling.jar gen <format> <domain size> <# of updates> [<seed>])
 ```
 
+The generated data then can be read with the `test` flag;
+
 ### Available formats
 
 - Units: Each index has final frequency around one.
 - UnitsAndRoots: There are about √n indices with frequency around √n, the rest are around one
--Outlier: There is one index with frequency around n, the rest are around one
+- Outlier: There is one index with frequency around n, the rest are around one

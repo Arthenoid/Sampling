@@ -4,11 +4,17 @@ import arthenoid.hellwire.sampling.context.BasicContext;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.context.MurmurHash;
+import arthenoid.hellwire.sampling.datagen.Format;
 import arthenoid.hellwire.sampling.samplers.IntegerSampler;
 import arthenoid.hellwire.sampling.samplers.RealSampler;
 import arthenoid.hellwire.sampling.samplers.Sampler;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Random;
@@ -41,7 +47,7 @@ public class CLI {
           updates = Long.parseLong(args[3]);
         Format format = getFormat(name, seed, n, updates);
         try (DataOutputStream out = new DataOutputStream(System.out)) {
-          out.writeChars(name);
+          out.writeUTF(name);
           out.writeLong(seed);
           out.writeLong(n);
           out.writeLong(updates);
@@ -83,9 +89,10 @@ public class CLI {
       System.exit(1);
       return;
     }
-    Scanner fin = null;
+    InputStream ins = null;
     long period = 0, prime = 0, seed = Long.MIN_VALUE;
     Function<Context, Hash> hasher = null;
+    boolean test = false;
     for (int i = 1; i < args.length; i++) switch (args[i]) {
       case "period":
       case "P":
@@ -105,12 +112,12 @@ public class CLI {
         }
         break;
       case "in":
-        if (fin != null) {
+        if (ins != null) {
           System.err.println("Input already set");
           System.exit(1);
         }
         try {
-          fin = new Scanner(Path.of(args[++i]));
+          ins = Files.newInputStream(Path.of(args[++i]));
         } catch (Exception e) {
           System.err.println("Invalid input");
           System.exit(1);
@@ -165,13 +172,20 @@ public class CLI {
           System.exit(1);
         }
         break;
+      case "test":
+        if (test) {
+          System.err.println("Test already set");
+          System.exit(1);
+        }
+        test = true;
+        break;
       default:
         System.err.println("Unknown argument: " + args[i]);
         System.exit(1);
     }
     if (prime == 0) prime = 1685727585142753L;
     if (hasher == null) hasher = MurmurHash::new;
-    Scanner in = fin == null ? new Scanner(System.in) : fin;
+    if (ins == null) ins = System.in;
     constructorParams[0] = seed == Long.MIN_VALUE ? new BasicContext(prime, hasher) : new BasicContext(prime, seed, hasher);
     Sampler sampler;
     try {
@@ -181,31 +195,74 @@ public class CLI {
       System.exit(1);
       return;
     }
-    Runnable update;
-    Supplier<String> query;
-    if (sampler instanceof IntegerSampler) {
-      update = () -> {
-        ((IntegerSampler) sampler).update(in.nextLong(), in.nextLong());
-      };
-      query = () -> {
-        IntegerResult result = (IntegerResult) sampler.query();
-        return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
-      };
+    if (test) {
+      DataInputStream in = new DataInputStream(ins);
+      String name;
+      long inSeed, n, updates;
+      Format format;
+      try {
+        format = getFormat(name = in.readUTF(), inSeed = in.readLong(), n = in.readLong(), updates = in.readLong());
+      } catch (Exception e) {
+        System.err.println("Invalid data format");
+        System.exit(1);
+        return;
+      }
+      System.out.println("Test input format: " + name + " " + n + " " + updates + " " + inSeed);
+      Updater update = sampler instanceof IntegerSampler
+        ? (x, w) -> {
+          ((IntegerSampler) sampler).update(x, (long) w);
+        }
+        : (x, w) -> {
+          ((RealSampler) sampler).update(x, w);
+        };
+      try {
+        for (long i = 0; i < updates; i++) update.update(in.readLong(), in.readDouble());
+      } catch (IOException e) {
+        System.err.println("IO exception");
+        System.exit(1);
+        return;
+      }
+      Result result = sampler.query();
+      if (result == null) {
+        System.out.println("Query failed");
+      } else {
+        System.out.println("Result: (" + result.i + ", " + result.getWeight().doubleValue() + ")");
+        Format.Expectation expected = format.expected(sampler.p(), result.i);
+        System.out.println("This index was expected with probability" + expected.probability + " and frequency around " + expected.weight);
+      }
     } else {
-      update = () -> {
-        ((RealSampler) sampler).update(in.nextLong(), in.nextDouble());
-      };
-      query = () -> {
-        RealResult result = (RealResult) sampler.query();
-        return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
-      };
+      Scanner in = new Scanner(ins == null ? System.in : ins, StandardCharsets.UTF_8);
+      Runnable update;
+      Supplier<String> query;
+      if (sampler instanceof IntegerSampler) {
+        update = () -> {
+          ((IntegerSampler) sampler).update(in.nextLong(), in.nextLong());
+        };
+        query = () -> {
+          IntegerResult result = (IntegerResult) sampler.query();
+          return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
+        };
+      } else {
+        update = () -> {
+          ((RealSampler) sampler).update(in.nextLong(), in.nextDouble());
+        };
+        query = () -> {
+          RealResult result = (RealResult) sampler.query();
+          return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
+        };
+      }
+      long i = 0;
+      while (in.hasNext()) {
+        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + query.get());
+        update.run();
+        i++;
+      }
+      System.out.println("Final (after " + i + " updates): " + query.get());
     }
-    long i = 0;
-    while (in.hasNext()) {
-      if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + query.get());
-      update.run();
-      i++;
-    }
-    System.out.println("Final (after " + i + " updates): " + query.get());
+  }
+  
+  @FunctionalInterface
+  public interface Updater {
+    void update(long x, double w);
   }
 }

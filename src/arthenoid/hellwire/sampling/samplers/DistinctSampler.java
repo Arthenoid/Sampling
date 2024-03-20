@@ -6,6 +6,11 @@ import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.SparseRecoverer;
 
 public class DistinctSampler implements IntegerSampler {
+  @Override
+  public double p() {
+    return 0;
+  }
+  
   protected final Context context;
   protected final long n;
   protected final int log2n;

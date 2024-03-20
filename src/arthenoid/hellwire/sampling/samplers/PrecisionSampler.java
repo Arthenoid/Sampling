@@ -8,6 +8,11 @@ import java.util.PriorityQueue;
 import java.util.Random;
 
 public class PrecisionSampler implements RealSampler {
+  @Override
+  public double p() {
+    return 2;
+  }
+  
   protected final Context context;
   protected final long n;
   protected final double δ, ε;
