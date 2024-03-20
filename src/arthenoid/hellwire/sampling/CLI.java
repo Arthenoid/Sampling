@@ -7,18 +7,52 @@ import arthenoid.hellwire.sampling.context.MurmurHash;
 import arthenoid.hellwire.sampling.samplers.IntegerSampler;
 import arthenoid.hellwire.sampling.samplers.RealSampler;
 import arthenoid.hellwire.sampling.samplers.Sampler;
+import java.io.DataOutputStream;
 import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CLI {
+  protected static Format getFormat(String name, long seed, long n, long updates) throws Exception {
+    return ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name))
+      .getConstructor(long.class, long.class, long.class)
+      .newInstance(seed, n, updates);
+  }
+  
   public static void main(String[] args) {
     if (args.length < 1) {
       System.err.println("Sampler not specified");
       System.exit(1);
+    }
+    if (args[0].equals("gen")) {
+      if (args.length < 4 || args.length > 5) {
+        System.err.println("Wrong number of generator arguments (expected: <format> <domain size> <# of updates> [<seed>])");
+        System.exit(1);
+      }
+      try {
+        String name = args[1];
+        long
+          seed = args.length > 4 ? Long.parseLong(args[4]) : (new Random()).nextLong(),
+          n = Long.parseLong(args[2]),
+          updates = Long.parseLong(args[3]);
+        Format format = getFormat(name, seed, n, updates);
+        try (DataOutputStream out = new DataOutputStream(System.out)) {
+          out.writeChars(name);
+          out.writeLong(seed);
+          out.writeLong(n);
+          out.writeLong(updates);
+          format.generate(out);
+        }
+        return;
+      } catch (Exception e) {
+        System.err.println("Format not found");
+        System.exit(1);
+        return;
+      }
     }
     if (args[0].charAt(args[0].length() - 1) != ')') {
       System.err.println("Invalid sampler specification");

@@ -39,3 +39,15 @@ java -jar Sampling.jar <sampler>(<parameter>..) [<argument>]...
 ```
 java -jar Sampling.jar "Distinct(42)" H Linear seed 42 in  data/updates.txt
 ```
+
+## Test data generation
+
+```
+java -jar Sampling.jar gen <format> <domain size> <# of updates> [<seed>])
+```
+
+### Available formats
+
+- Units: Each index has final frequency around one.
+- UnitsAndRoots: There are about √n indices with frequency around √n, the rest are around one
+-Outlier: There is one index with frequency around n, the rest are around one
