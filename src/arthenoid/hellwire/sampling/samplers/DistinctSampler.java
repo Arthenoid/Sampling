@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling.samplers;
 
 import arthenoid.hellwire.sampling.IntegerResult;
+import arthenoid.hellwire.sampling.MemoryUser;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.SparseRecoverer;
@@ -16,9 +17,23 @@ public class DistinctSampler implements IntegerSampler {
   protected final int log2n;
   protected final Subsampler[] subsamplers;
   
-  protected class Subsampler {
+  @Override
+  public int memoryUsed() {
+    int m = 4 + subsamplers.length;
+    for (Subsampler subsampler : subsamplers) m += subsampler.memoryUsed();
+    return m;
+  }
+  
+  protected class Subsampler implements MemoryUser {
     protected final Hash h;
     protected final SparseRecoverer[] D;
+    
+    @Override
+    public int memoryUsed() {
+      int m = 3 + log2n + h.memoryUsed();
+      for (SparseRecoverer sparseRecoverer : D) m += sparseRecoverer.memoryUsed();
+      return m;
+    }
     
     public Subsampler() {
       h = context.newHash();

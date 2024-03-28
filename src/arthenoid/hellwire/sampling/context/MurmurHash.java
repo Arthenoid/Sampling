@@ -3,6 +3,11 @@ package arthenoid.hellwire.sampling.context;
 public class MurmurHash implements Hash {
   protected final int seed;
   
+  @Override
+  public int memoryUsed() {
+    return 1; //0.5
+  }
+  
   public MurmurHash(int seed) {
     this.seed = seed;
   }

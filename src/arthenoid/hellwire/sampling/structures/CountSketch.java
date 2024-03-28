@@ -1,14 +1,22 @@
 package arthenoid.hellwire.sampling.structures;
 
+import arthenoid.hellwire.sampling.MemoryUser;
 import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 
-public class CountSketch {
+public class CountSketch implements MemoryUser {
   protected final Context context;
   protected final int d, t;
   protected final double[][] C;
   protected final Hash[] h, g;
+  
+  @Override
+  public int memoryUsed() {
+    int m = 5 + d * (t + 3);
+    for (int i = 0; i < d; i++) m += h[i].memoryUsed() + g[i].memoryUsed();
+    return m;
+  }
   
   public CountSketch(Context context, int t, int d) {
     this.context = context;

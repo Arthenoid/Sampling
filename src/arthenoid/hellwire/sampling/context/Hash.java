@@ -1,6 +1,8 @@
 package arthenoid.hellwire.sampling.context;
 
-public interface Hash {
+import arthenoid.hellwire.sampling.MemoryUser;
+
+public interface Hash extends MemoryUser {
   long toRange(long x, long bound);
   
   default long toSign(long x) {

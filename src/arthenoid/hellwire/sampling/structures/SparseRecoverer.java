@@ -1,12 +1,18 @@
 package arthenoid.hellwire.sampling.structures;
 
 import arthenoid.hellwire.sampling.IntegerResult;
+import arthenoid.hellwire.sampling.MemoryUser;
 import arthenoid.hellwire.sampling.context.Context;
 
-public class SparseRecoverer {
+public class SparseRecoverer implements MemoryUser {
   protected final Context context;
   protected final long n, r;
   protected long ℓ, z, p;
+  
+  @Override
+  public int memoryUsed() {
+    return 6;
+  }
   
   public SparseRecoverer(Context context, long n) {
     if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be at most n^3.");

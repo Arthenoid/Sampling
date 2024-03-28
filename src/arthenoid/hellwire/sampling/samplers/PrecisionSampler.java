@@ -1,5 +1,6 @@
 package arthenoid.hellwire.sampling.samplers;
 
+import arthenoid.hellwire.sampling.MemoryUser;
 import arthenoid.hellwire.sampling.RealResult;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
@@ -20,13 +21,24 @@ public class PrecisionSampler implements RealSampler {
   protected final int m;
   protected final int Dt;
   protected final int Dd;
-  protected final int repeat;
   protected final Subsampler[] subsamplers;
   
-  protected class Subsampler {
+  @Override
+  public int memoryUsed() {
+    int m = 8 + subsamplers.length;
+    for (Subsampler subsampler : subsamplers) m += subsampler.memoryUsed();
+    return m;
+  }
+  
+  protected class Subsampler implements MemoryUser {
     protected final Hash uH;
     protected final CountSketch D;
     protected final CountSketch R;
+    
+    @Override
+    public int memoryUsed() {
+      return 3 + uH.memoryUsed() + D.memoryUsed() + R.memoryUsed();
+    }
     
     protected Subsampler() {
       uH = context.newHash();
@@ -73,9 +85,8 @@ public class PrecisionSampler implements RealSampler {
     m = (int) Math.round(50 * logN / ε);
     Dt = (int) Math.round(6 * m / logN);
     Dd = (int) Math.round(logN);
-    repeat = (int) Math.round(Math.log(1 / δ) / ε);
-    subsamplers = new Subsampler[repeat];
-    for (int i = 0; i < repeat; i++) subsamplers[i] = new Subsampler();
+    subsamplers = new Subsampler[(int) Math.round(Math.log(1 / δ) / ε)];
+    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler();
   }
   
   @Override

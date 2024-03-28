@@ -173,6 +173,7 @@ public class CLI {
         }
         break;
       case "test":
+      case "T":
         if (test) {
           System.err.println("Test already set");
           System.exit(1);
@@ -195,6 +196,7 @@ public class CLI {
       System.exit(1);
       return;
     }
+    System.out.println("Sampler memory usage: " + sampler.memoryUsed());
     if (test) {
       DataInputStream in = new DataInputStream(ins);
       String name;
