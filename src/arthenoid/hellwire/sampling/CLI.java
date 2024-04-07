@@ -197,28 +197,31 @@ public class CLI {
       return;
     }
     System.out.println("Sampler memory usage: " + sampler.memoryUsed());
+    boolean integer = sampler instanceof IntegerSampler;
+    IntegerSampler integerSampler;
+    RealSampler realSampler;
+    if (integer) {
+      integerSampler = (IntegerSampler) sampler;
+      realSampler = null;
+    } else {
+      integerSampler = null;
+      realSampler = (RealSampler) sampler;
+    }
     if (test) {
-      DataInputStream in = new DataInputStream(ins);
-      String name;
-      long inSeed, n, updates;
-      Format format;
+      TestIP ip;
       try {
-        format = getFormat(name = in.readUTF(), inSeed = in.readLong(), n = in.readLong(), updates = in.readLong());
+        ip = new TestIP(ins);
       } catch (Exception e) {
         System.err.println("Invalid data format");
         System.exit(1);
         return;
       }
-      System.out.println("Test input format: " + name + " " + n + " " + updates + " " + inSeed);
-      Updater update = sampler instanceof IntegerSampler
-        ? (x, w) -> {
-          ((IntegerSampler) sampler).update(x, (long) w);
-        }
-        : (x, w) -> {
-          ((RealSampler) sampler).update(x, w);
-        };
+      System.out.println("Test input format: " + ip.name + " " + ip.n + " " + ip.updates + " " + ip.seed);
       try {
-        for (long i = 0; i < updates; i++) update.update(in.readLong(), in.readDouble());
+        while (ip.hasData()) {
+          if (integer) ip.update(integerSampler);
+            else ip.update(realSampler);
+        }
       } catch (IOException e) {
         System.err.println("IO exception");
         System.exit(1);
@@ -228,38 +231,85 @@ public class CLI {
       if (result == null) {
         System.out.println("Query failed");
       } else {
-        System.out.println("Result: (" + result.i + ", " + result.getWeight().doubleValue() + ")");
-        Format.Expectation expected = format.expected(sampler.p(), result.i);
-        System.out.println("This index was expected with probability" + expected.probability + " and frequency around " + expected.weight);
+        System.out.println("Result: (" + result.i + ", " + result.getWeight() + ")");
+        Format.Expectation expected = ip.format.expected(sampler.p(), result.i);
+        System.out.println("This index was expected with probability " + expected.probability + " and frequency around " + expected.weight);
       }
     } else {
-      Scanner in = new Scanner(ins == null ? System.in : ins, StandardCharsets.UTF_8);
-      Runnable update;
-      Supplier<String> query;
-      if (sampler instanceof IntegerSampler) {
-        update = () -> {
-          ((IntegerSampler) sampler).update(in.nextLong(), in.nextLong());
-        };
-        query = () -> {
-          IntegerResult result = (IntegerResult) sampler.query();
-          return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
-        };
-      } else {
-        update = () -> {
-          ((RealSampler) sampler).update(in.nextLong(), in.nextDouble());
-        };
-        query = () -> {
-          RealResult result = (RealResult) sampler.query();
-          return result == null ? "FAILED" : ("(" + result.i + ", " + result.weight + ")");
-        };
-      }
+      TextIP ip = new TextIP(ins);
+      Supplier<String> query = () -> formatResult(sampler.query());
       long i = 0;
-      while (in.hasNext()) {
-        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + query.get());
-        update.run();
+      while (ip.hasData()) {
+        if (integer) ip.update(integerSampler);
+          else ip.update(realSampler);
         i++;
+        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + query.get());
       }
       System.out.println("Final (after " + i + " updates): " + query.get());
+    }
+  }
+  
+  protected static String formatResult(Result result) {
+    return result == null ? "FAILED" : ("(" + result.i + ", " + result.getWeight() + ")");
+  }
+  
+  protected interface InputProccessor {
+    boolean hasData();
+    void update(IntegerSampler sampler) throws IOException;
+    void update(RealSampler sampler) throws IOException;
+  }
+  
+  protected static class TextIP implements InputProccessor {
+    protected final Scanner in;
+    
+    public TextIP(InputStream ins) {
+      in = new Scanner(ins, StandardCharsets.UTF_8);
+    }
+    
+    @Override
+    public boolean hasData() {
+      return in.hasNext();
+    }
+    
+    @Override
+    public void update(IntegerSampler sampler) {
+      sampler.update(in.nextLong(), in.nextLong());
+    }
+    
+    @Override
+    public void update(RealSampler sampler) {
+      sampler.update(in.nextLong(), in.nextDouble());
+    }
+  }
+  
+  protected static class TestIP implements InputProccessor {
+    protected final DataInputStream in;
+    protected int i = 0;
+    
+    public final String name;
+    public final long seed, n, updates;
+    public final Format format;
+    
+    public TestIP(InputStream ins) throws Exception {
+      in = new DataInputStream(ins);
+      format = getFormat(name = in.readUTF(), seed = in.readLong(), n = in.readLong(), updates = in.readLong());
+    }
+    
+    @Override
+    public boolean hasData() {
+      return i < updates;
+    }
+    
+    @Override
+    public void update(IntegerSampler sampler) throws IOException {
+      sampler.update(in.readLong(), (long) in.readDouble());
+      i++;
+    }
+    
+    @Override
+    public void update(RealSampler sampler) throws IOException {
+      sampler.update(in.readLong(), in.readDouble());
+      i++;
     }
   }
   

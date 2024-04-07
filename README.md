@@ -14,17 +14,17 @@ java -jar Sampling.jar <sampler>(<parameter>..) [<argument>]...
 
 ### Arguments
 
-| Name | Description |
-| :-: | :-: |
-| `period <p>` | Prints query every *p* updates. If not set, prints only at the end. |
-| `P <p>` | Alias for `period` |
-| `in <path>` | Reads updates from *path*. If not set, uses stdin. |
-| `prime <p>` | Sets the prime number. |
+|      Name     | Description                                                             |
+| :-----------: | :---------------------------------------------------------------------- |
+|  `period <p>` | Prints query every *p* updates. If not set, prints only at the end.     |
+|    `P <p>`    | Alias for `period`                                                      |
+|  `in <path>`  | Reads updates from *path*. If not set, uses stdin.                      |
+|  `prime <p>`  | Sets the prime number.                                                  |
 | `seed <seed>` | Sets the seed for random number generation. If not set, chooses random. |
-| `hash <hash>` | Sets the hash. If not set, uses Murmur hash. |
-| `H <hash>` | Alias for `hash` |
-| `test` | Consumes generated test data. |
-| `T` | Alias for `test` |
+| `hash <hash>` | Sets the hash. If not set, uses Murmur hash.                            |
+|   `H <hash>`  | Alias for `hash`                                                        |
+|     `test`    | Consumes generated test data.                                           |
+|      `T`      | Alias for `test`                                                        |
 
 ### Available samplers
 
