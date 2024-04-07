@@ -35,6 +35,7 @@ java -jar Sampling.jar <sampler>(<parameter>..) [<argument>]...
 
 - Linear
 - Murmur
+- MultiplyShift
 
 ### Example
 

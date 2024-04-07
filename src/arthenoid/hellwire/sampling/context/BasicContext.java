@@ -34,6 +34,11 @@ public class BasicContext implements Context {
   }
   
   @Override
+  public long random() {
+    return random.nextLong();
+  }
+  
+  @Override
   public long random(long bound) {
     return Util.randomLong(random, bound);
   }
