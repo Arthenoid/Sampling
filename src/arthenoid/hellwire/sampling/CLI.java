@@ -20,7 +20,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class CLI {
   protected static Format getFormat(String name, long seed, long n, long updates) throws Exception {
@@ -207,50 +206,47 @@ public class CLI {
       integerSampler = null;
       realSampler = (RealSampler) sampler;
     }
+    InputProccessor ip;
     if (test) {
-      TestIP ip;
+      TestIP tip;
       try {
-        ip = new TestIP(ins);
+        ip = tip = new TestIP(ins);
       } catch (Exception e) {
         System.err.println("Invalid data format");
         System.exit(1);
         return;
       }
-      System.out.println("Test input format: " + ip.name + " " + ip.n + " " + ip.updates + " " + ip.seed);
-      try {
-        while (ip.hasData()) {
-          if (integer) ip.update(integerSampler);
-            else ip.update(realSampler);
-        }
-      } catch (IOException e) {
-        System.err.println("IO exception");
-        System.exit(1);
-        return;
-      }
-      Result result = sampler.query();
-      if (result == null) {
-        System.out.println("Query failed");
-      } else {
-        System.out.println("Result: (" + result.i + ", " + result.getWeight() + ")");
-        Format.Expectation expected = ip.format.expected(sampler.p(), result.i);
-        System.out.println("This index was expected with probability " + expected.probability + " and frequency around " + expected.weight);
-      }
+      System.out.println("Test input format: " + tip.name + " " + tip.n + " " + tip.updates + " " + tip.seed);
     } else {
-      TextIP ip = new TextIP(ins);
-      Supplier<String> query = () -> formatResult(sampler.query());
-      long i = 0;
+      ip = new TextIP(ins);
+    }
+    long i = 0;
+    try {
       while (ip.hasData()) {
         if (integer) ip.update(integerSampler);
           else ip.update(realSampler);
         i++;
-        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + query.get());
+        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + formatQuery(sampler));
       }
-      System.out.println("Final (after " + i + " updates): " + query.get());
+    } catch (IOException e) {
+      System.err.println("IO exception");
+      System.exit(1);
+      return;
+    }
+    Result result = sampler.query();
+    System.out.println("Final (after " + i + " updates): " + formatResult(result));
+    if (test && result != null) {
+      Format.Expectation expected = ((TestIP) ip).format.expected(sampler.p(), result.i);
+      System.out.println("This index was expected with probability " + expected.probability + " and frequency around " + expected.weight);
     }
   }
   
   protected static String formatResult(Result result) {
-    return result == null ? "FAILED" : ("(" + result.i + ", " + result.getWeight() + ")");
+    return result == null ? "QUERY FAILED" : ("(" + result.i + ", " + result.getWeight() + ")");
+  }
+  
+  protected static String formatQuery(Sampler sampler) {
+    return formatResult(sampler.query());
   }
   
   protected interface InputProccessor {
@@ -285,6 +281,8 @@ public class CLI {
   protected static class TestIP implements InputProccessor {
     protected final DataInputStream in;
     protected int i = 0;
+    protected long x;
+    protected double w;
     
     public final String name;
     public final long seed, n, updates;
@@ -300,16 +298,22 @@ public class CLI {
       return i < updates;
     }
     
-    @Override
-    public void update(IntegerSampler sampler) throws IOException {
-      sampler.update(in.readLong(), (long) in.readDouble());
+    protected void read() throws IOException {
+      x = in.readLong();
+      w = in.readDouble();
       i++;
     }
     
     @Override
+    public void update(IntegerSampler sampler) throws IOException {
+      read();
+      sampler.update(x, (long) w);
+    }
+    
+    @Override
     public void update(RealSampler sampler) throws IOException {
-      sampler.update(in.readLong(), in.readDouble());
-      i++;
+      read();
+      sampler.update(x, w);
     }
   }
   
