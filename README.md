@@ -50,6 +50,8 @@ java -jar Sampling.jar "Distinct(42)" H Linear seed 42 in  data/updates.txt
 java -jar Sampling.jar gen <format> <domain size> <# of updates> [<seed>])
 ```
 
+If you use `n` as the number of updates, each index will get only one update with the final value.
+
 The generated data then can be read with the `test` flag;
 
 ### Available formats

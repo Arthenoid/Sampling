@@ -23,9 +23,13 @@ import java.util.function.Function;
 
 public class CLI {
   protected static Format getFormat(String name, long seed, long n, long updates) throws Exception {
-    return ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name))
-      .getConstructor(long.class, long.class, long.class)
-      .newInstance(seed, n, updates);
+    return updates < 0
+      ? ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.SUFormat" + name))
+        .getConstructor(long.class, long.class)
+        .newInstance(seed, n)
+      : ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name))
+        .getConstructor(long.class, long.class, long.class)
+        .newInstance(seed, n, updates);
   }
   
   public static void main(String[] args) {
@@ -43,7 +47,15 @@ public class CLI {
         long
           seed = args.length > 4 ? Long.parseLong(args[4]) : (new Random()).nextLong(),
           n = Long.parseLong(args[2]),
-          updates = Long.parseLong(args[3]);
+          updates = args[3].equals("n") ? -1 : Long.parseLong(args[3]);
+        if (n <= 0) {
+          System.err.println("The domain size must be positive");
+          System.exit(1);
+        }
+        if (!args[3].equals("n") && updates < 0) {
+          System.err.println("The # of updates can't be negative");
+          System.exit(1);
+        }
         Format format = getFormat(name, seed, n, updates);
         try (DataOutputStream out = new DataOutputStream(System.out)) {
           out.writeUTF(name);
@@ -290,7 +302,9 @@ public class CLI {
     
     public TestIP(InputStream ins) throws Exception {
       in = new DataInputStream(ins);
-      format = getFormat(name = in.readUTF(), seed = in.readLong(), n = in.readLong(), updates = in.readLong());
+      long u;
+      format = getFormat(name = in.readUTF(), seed = in.readLong(), n = in.readLong(), u = in.readLong());
+      updates = u < 0 ? n : u;
     }
     
     @Override
