@@ -25,6 +25,8 @@ java -jar Sampling.jar <sampler>(<parameter>..) [<argument>]...
 |   `H <hash>`  | Alias for `hash`                                                        |
 |     `test`    | Consumes generated test data.                                           |
 |      `T`      | Alias for `test`                                                        |
+|   `kmer <k>`  | Reads FASTA files and samples *k*-mers.                                 |
+|    `K <k>`    | Alias for `kmer`                                                        |
 
 ### Available samplers
 
