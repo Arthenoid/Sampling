@@ -1,5 +1,6 @@
-package arthenoid.hellwire.sampling;
+package arthenoid.hellwire.sampling.cli;
 
+import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.context.BasicContext;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;

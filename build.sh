@@ -2,6 +2,6 @@
 
 shopt -s globstar
 
-javac -d build/ src/**/*.java
+javac -Xlint -d build/ src/**/*.java
 cd build/
-jar --create --file=../Sampling.jar --main-class=arthenoid.hellwire.sampling.CLI .
+jar --create --file=../Sampling.jar --main-class=arthenoid.hellwire.sampling.cli.CLI .
