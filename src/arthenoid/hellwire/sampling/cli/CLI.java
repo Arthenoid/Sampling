@@ -147,7 +147,7 @@ public class CLI {
         .asSubclass(Sampler.class)
         .getConstructor(Context.class, long.class, double.class, double.class)
         .newInstance(
-          Opt.seed.present() ? new BasicContext(Opt.prime.value(), hasher) : new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher),
+          Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
           n,
           Opt.delta.value(),
           Opt.epsilon.value()
