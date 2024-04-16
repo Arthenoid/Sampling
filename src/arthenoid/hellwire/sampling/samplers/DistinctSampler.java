@@ -58,7 +58,7 @@ public class DistinctSampler implements IntegerSampler {
     }
   }
   
-  public DistinctSampler(Context context, long n) {
+  public DistinctSampler(Context context, long n, double δ, double ε) {
     this.context = context;
     this.n = n;
     log2n = Long.SIZE - Long.numberOfLeadingZeros(n - 1);

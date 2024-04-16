@@ -15,14 +15,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class CLI {
   protected static void die(String msg) {
@@ -30,161 +33,132 @@ public class CLI {
     System.exit(1);
   }
   
-  protected static Format getFormat(String name, long seed, long n, long updates) throws Exception {
+  public static void main(String[] args) {
+    main(Stream.of(args).iterator());
+  }
+  
+  public static void main(Iterator<String> args) {
+    if (!args.hasNext()) die("No command specified");
+    switch (args.next()) {
+      case "sample":
+        sample(args);
+        break;
+      case "gen":
+        gen(args);
+        break;
+      default:
+        die("Unknown command");
+    }
+  }
+  
+  public static void tryParse(ArgParser ap, Iterator<String> args) {
+    String error = ap.parse(args);
+    if (error != null) die("Invalid arguments: " + error);
+  }
+  
+  public static void gen(Iterator<String> args) {
+    String name;
+    long n, updates, seed;
+    try {
+      name = args.next();
+      n = Long.parseLong(args.next());
+      if (n <= 0) die("The domain size must be positive");
+      String updatesArg = args.next();
+      updates = updatesArg.equals("n") ? -1 : Long.parseLong(updatesArg);
+      if (!updatesArg.equals("n") && updates < 0) die("The # of updates can't be negative");
+    } catch (NoSuchElementException e) {
+      die("Wrong number of generator arguments (expected: <format> <domain size> <# of updates>)");
+      return;
+    } catch (NumberFormatException e) {
+      die("Invalid generator arguments");
+      return;
+    }
+    ArgParser ap = ArgParser.create(Opt.out, Opt.seed);
+    tryParse(ap, args);
+    
+    seed = Opt.seed.or(() -> (new Random()).nextLong());
+    Format format;
+    try {
+      format = getFormat(name, seed, n, updates);
+    } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      die("Format not found: " + e.getMessage());
+      return;
+    }
+    try (DataOutputStream out = new DataOutputStream(Opt.out.present() ? Files.newOutputStream(Opt.out.value()) : System.out)) {
+      out.writeUTF(name);
+      out.writeLong(seed);
+      out.writeLong(n);
+      out.writeLong(updates);
+      format.generate(out);
+    } catch (IOException  e) {
+      die("IOException: " + e.getMessage());
+    }
+  }
+  
+  protected static Format getFormat(String name, long seed, long n, long updates) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
     return updates < 0
-      ? ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.SUFormat" + name))
+      ? Class.forName("arthenoid.hellwire.sampling.datagen.SUFormat" + name)
+        .asSubclass(Format.class)
         .getConstructor(long.class, long.class)
         .newInstance(seed, n)
-      : ((Class<? extends Format>) Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name))
+      : Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name)
+        .asSubclass(Format.class)
         .getConstructor(long.class, long.class, long.class)
         .newInstance(seed, n, updates);
   }
   
-  public enum InputType {
-    TEXT,
-    TEST,
-    K_MER;
-  }
-  
-  public static void main(String[] args) {
-    if (args.length < 1) die("Sampler not specified");
-    if (args[0].equals("gen")) {
-      if (args.length < 4 || args.length > 5) die("Wrong number of generator arguments (expected: <format> <domain size> <# of updates> [<seed>])");
-      try {
-        String name = args[1];
-        long
-          seed = args.length > 4 ? Long.parseLong(args[4]) : (new Random()).nextLong(),
-          n = Long.parseLong(args[2]),
-          updates = args[3].equals("n") ? -1 : Long.parseLong(args[3]);
-        if (n <= 0) die("The domain size must be positive");
-        if (!args[3].equals("n") && updates < 0) die("The # of updates can't be negative");
-        Format format = getFormat(name, seed, n, updates);
-        try (DataOutputStream out = new DataOutputStream(System.out)) {
-          out.writeUTF(name);
-          out.writeLong(seed);
-          out.writeLong(n);
-          out.writeLong(updates);
-          format.generate(out);
-        }
-        return;
-      } catch (Exception e) {
-        die("Format not found");
-        return;
-      }
-    }
-    if (args[0].charAt(args[0].length() - 1) != ')') die("Invalid sampler specification");
-    Constructor<? extends Sampler> constructor = null;
-    Object[] constructorParams;
+  public static void sample(Iterator<String> args) {
+    String name;
+    long n;
     try {
-      String[] samplerArgs = args[0].split("\\(", 2);
-      Class<? extends Sampler> type = (Class<? extends Sampler>) Class.forName("arthenoid.hellwire.sampling.samplers." + samplerArgs[0] + "Sampler");
-      samplerArgs = samplerArgs.length > 1 ? samplerArgs[1].substring(0, samplerArgs[1].length() - 1).split("\\s*,\\s*") : new String[0];
-      for (Constructor<?> cons : type.getConstructors()) {
-        if (cons.getParameterCount() != samplerArgs.length + 1 || cons.getParameterTypes()[0] != Context.class) continue;
-        if (constructor != null) throw new Exception("Ambiguous constructor");
-        constructor = (Constructor<? extends Sampler>) cons;
+      name = args.next();
+      n = Long.parseLong(args.next());
+      if (n <= 0) die("The domain size must be positive");
+    } catch (NoSuchElementException e) {
+      die("Sampler not specified");
+      return;
+    } catch (NumberFormatException e) {
+      die("Invalid domain size");
+      return;
+    }
+    ArgParser ap = ArgParser.create(Opt.in, Opt.out, Opt.delta, Opt.epsilon, Opt.period, Opt.seed, Opt.prime, Opt.hash, Opt.gen, Opt.kMer);
+    tryParse(ap, args);
+    
+    Function<Context, Hash> hasher;
+    if (Opt.hash.present()) {
+      try {
+        Constructor<? extends Hash> hCons = Class.forName("arthenoid.hellwire.sampling.context." + Opt.hash.value() + "Hash").asSubclass(Hash.class).getConstructor(Context.class);
+        hasher = c -> {
+          try {
+            return hCons.newInstance(c);
+          } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+        };
+      } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+        die("Hash not found");
+        return;
       }
-      if (constructor == null) throw new NoSuchElementException();
-      constructorParams = new Object[constructor.getParameterCount()];
-      Class<?>[] constructorParamTypes = constructor.getParameterTypes();
-      for (int i = 1; i < constructorParams.length; i++) {
-        if (constructorParamTypes[i] == int.class) constructorParams[i] = Integer.valueOf(samplerArgs[i - 1]);
-          else if (constructorParamTypes[i] == long.class) constructorParams[i] = Long.valueOf(samplerArgs[i - 1]);
-          else if (constructorParamTypes[i] == double.class) constructorParams[i] = Double.valueOf(samplerArgs[i - 1]);
-          else throw new Exception("Unsupported sampler argument type");
-      }
-    } catch (Exception e) {
+    } else hasher = MurmurHash::new;
+    
+    Sampler<?> sampler;
+    try {
+      sampler = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
+        .asSubclass(Sampler.class)
+        .getConstructor(Context.class, long.class, double.class, double.class)
+        .newInstance(
+          Opt.seed.present() ? new BasicContext(Opt.prime.value(), hasher) : new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher),
+          n,
+          Opt.delta.value(),
+          Opt.epsilon.value()
+        );
+    } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
       die("Sampler not found");
       return;
-    }
-    InputStream ins = null;
-    long period = 0, prime = 0, seed = Long.MIN_VALUE;
-    Function<Context, Hash> hasher = null;
-    InputType inputType = InputType.TEXT;
-    int kmer = -1;
-    for (int i = 1; i < args.length; i++) switch (args[i]) {
-      case "period":
-      case "P":
-        if (period > 0) die("Period already set");
-        try {
-          period = Long.parseLong(args[++i]);
-        } catch (Exception e) {
-          die("Invalid period");
-        }
-        if (period <= 0) die("Period must be positive");
-        break;
-      case "in":
-        if (ins != null) die("Input already set");
-        try {
-          ins = Files.newInputStream(Path.of(args[++i]));
-        } catch (Exception e) {
-          die("Invalid input");
-        }
-        break;
-      case "prime":
-        if (prime > 0) die("Prime already set");
-        try {
-          prime = Long.parseLong(args[++i]);
-        } catch (Exception e) {
-          die("Invalid prime");
-        }
-        if (prime <= 1) die("Prime must be positive");
-        break;
-      case "seed":
-        if (seed > Long.MIN_VALUE) die("Seed already set");
-        try {
-          seed = Long.parseLong(args[++i]);
-        } catch (Exception e) {
-          die("Invalid seed");
-        }
-        break;
-      case "hash":
-      case "H":
-        if (hasher != null) die("Hash already set");
-        try {
-          Constructor<? extends Hash> hCons = ((Class<? extends Hash>) Class.forName("arthenoid.hellwire.sampling.context." + args[++i] + "Hash")).getConstructor(Context.class);
-          if (hCons == null) throw new NoSuchElementException();
-          hasher = c -> {
-            try {
-              return hCons.newInstance(c);
-            } catch (Exception e) {
-              return null;
-            }
-          };
-        } catch (Exception e) {
-          die("Hash not found");
-        }
-        break;
-      case "test":
-      case "T":
-        if (inputType != InputType.TEXT) die("Input type already set");
-        inputType = InputType.TEST;
-        break;
-      case "kmer":
-      case "K":
-        if (inputType != InputType.TEXT) die("Input type already set");
-        inputType = InputType.K_MER;
-        try {
-          kmer = Integer.parseInt(args[++i]);
-        } catch (Exception e) {
-          die("Invalid k-mer k");
-        }
-        break;
-      default:
-        die("Unknown argument: " + args[i]);
-    }
-    if (prime == 0) prime = 1685727585142753L;
-    if (hasher == null) hasher = MurmurHash::new;
-    if (ins == null) ins = System.in;
-    constructorParams[0] = seed == Long.MIN_VALUE ? new BasicContext(prime, hasher) : new BasicContext(prime, seed, hasher);
-    Sampler sampler;
-    try {
-      sampler = constructor.newInstance(constructorParams);
-    } catch (Exception e) {
-      die("Sampler cannot be initialised");
+    } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+      die("Sampler cannot be initialised: " + e.getMessage());
       return;
     }
-    System.out.println("Sampler memory usage: " + sampler.memoryUsed());
     boolean integer = sampler instanceof IntegerSampler;
     IntegerSampler integerSampler;
     RealSampler realSampler;
@@ -195,57 +169,57 @@ public class CLI {
       integerSampler = null;
       realSampler = (RealSampler) sampler;
     }
-    InputProccessor ip;
-    switch (inputType) {
-      case TEXT:
-        ip = new TextIP(ins);
-        break;
-      case TEST:
-        TestIP tip;
+    
+    try (
+      InputStream in = Opt.in.present() ? Files.newInputStream(Opt.in.value()) : System.in;
+      PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
+    ) {
+      out.println("Sampler memory usage: " + sampler.memoryUsed());
+      
+      InputProccessor ip;
+      if (Opt.gen.present() && Opt.kMer.present()) die("Mulitple output types specified.");
+      if (Opt.gen.present()) {
+        GenIP gip;
         try {
-          ip = tip = new TestIP(ins);
-        } catch (Exception e) {
+          ip = gip = new GenIP(in);
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException  e) {
           die("Invalid data format");
           return;
         }
-        System.out.println("Test input format: " + tip.name + " " + tip.n + " " + tip.updates + " " + tip.seed);
-        break;
-      case K_MER:
-        try {
-          ip = new KmerIP(ins, kmer, true);
-        } catch (Exception e) {
-          die("Invalid input");
-          return;
-        }
-        break;
-      default:
-        throw new AssertionError();
-    }
-    long i = 0;
-    try {
+        Format format = gip.format;
+        out.printf("Test input format: %s with domain size of %d and %d updates (seed: %d)\n",  gip.name, format.n, format.updates, format.seed);
+        if (n != format.n) die("The specified domain size is different than in the input.");
+      } else if (Opt.kMer.present()) {
+        long reqN = 1 << (2 * Opt.kMer.value());
+        if (n != reqN) die("The specified domain size is different from the required (" + reqN + ")");
+        ip = new KmerIP(in, Opt.kMer.value(), out);
+      } else {
+        ip = new TextIP(in);
+      }
+      
+      long i = 0, period = Opt.period.value();
       while (ip.hasData()) {
         if (integer) ip.update(integerSampler);
           else ip.update(realSampler);
         i++;
-        if (period > 0 && i % period == 0) System.out.println("After " + i + " updates: " + formatQuery(sampler, ip));
+        if (period > 0 && i % period == 0) out.println("After " + i + " updates: " + formatQuery(sampler, ip));
+      }
+      Result<?> result = sampler.query();
+      out.println("Final (after " + i + " updates): " + formatResult(result, ip));
+      if (Opt.gen.present() && result != null) {
+        Format.Expectation expected = ((GenIP) ip).format.expected(sampler.p(), result.i);
+        out.printf("This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
       }
     } catch (IOException e) {
-      die("IO exception");
-      return;
-    }
-    Result result = sampler.query();
-    System.out.println("Final (after " + i + " updates): " + formatResult(result, ip));
-    if (inputType == InputType.TEST && result != null) {
-      Format.Expectation expected = ((TestIP) ip).format.expected(sampler.p(), result.i);
-      System.out.println("This index was expected with probability " + expected.probability + " and frequency around " + expected.weight);
+      die("IO exception: " + e.getMessage());
     }
   }
   
-  protected static String formatResult(Result result, InputProccessor ip) {
+  protected static String formatResult(Result<?> result, InputProccessor ip) {
     return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.i) + ", " + result.getWeight() + ")");
   }
   
-  protected static String formatQuery(Sampler sampler, InputProccessor ip) {
+  protected static String formatQuery(Sampler<?> sampler, InputProccessor ip) {
     return formatResult(sampler.query(), ip);
   }
   
@@ -261,8 +235,8 @@ public class CLI {
   protected static class TextIP implements InputProccessor {
     protected final Scanner in;
     
-    public TextIP(InputStream ins) {
-      in = new Scanner(ins, StandardCharsets.UTF_8);
+    public TextIP(InputStream in) {
+      this.in = new Scanner(in, StandardCharsets.UTF_8);
     }
     
     @Override
@@ -281,26 +255,23 @@ public class CLI {
     }
   }
   
-  protected static class TestIP implements InputProccessor {
+  protected static class GenIP implements InputProccessor {
     protected final DataInputStream in;
     protected int i = 0;
     protected long x;
     protected double w;
     
     public final String name;
-    public final long seed, n, updates;
     public final Format format;
     
-    public TestIP(InputStream ins) throws Exception {
-      in = new DataInputStream(ins);
-      long u;
-      format = getFormat(name = in.readUTF(), seed = in.readLong(), n = in.readLong(), u = in.readLong());
-      updates = u < 0 ? n : u;
+    public GenIP(InputStream in) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, IOException {
+      this.in = new DataInputStream(in);
+      format = getFormat(name = this.in.readUTF(), this.in.readLong(), this.in.readLong(), this.in.readLong());
     }
     
     @Override
     public boolean hasData() {
-      return i < updates;
+      return i < format.updates;
     }
     
     protected void read() throws IOException {
@@ -327,14 +298,14 @@ public class CLI {
     protected final int k;
     protected boolean data = true, nl = true;
     protected int n = 0;
-    protected long kmer = 0, reverseKmer = 0;
+    protected long kMer = 0, reverseKMer = 0;
     
-    protected final boolean print;
+    protected final PrintStream out;
     
-    public KmerIP(InputStream ins, int k, boolean print) throws IOException {
+    public KmerIP(InputStream ins, long k, PrintStream out) throws IOException {
       in = new BufferedReader(new InputStreamReader(ins, StandardCharsets.UTF_8));
-      this.k = k;
-      this.print = print;
+      this.k = (int) k;
+      this.out = out;
       read();
     }
     
@@ -346,13 +317,13 @@ public class CLI {
       U = T;
     
     protected void add(long nuc) {
-      kmer = (kmer << 2) | nuc;
-      reverseKmer = (kmer >> 2) | ((nuc ^ 0b01) << (2 * (k - 1)));
+      kMer = (kMer << 2) | nuc;
+      reverseKMer = (kMer >> 2) | ((nuc ^ 0b01) << (2 * (k - 1)));
       if (n < k) n++;
-        else kmer &= (1 << (2 * k)) - 1;
+        else kMer &= (1 << (2 * k)) - 1;
     }
     
-    protected void read() throws IOException {
+    protected final void read() throws IOException {
       for (;;) {
         boolean onl = nl;
         switch (in.read()) {
@@ -367,8 +338,8 @@ public class CLI {
           case ';':
             if (onl) {
               String comment = in.readLine();
-              if (print) System.out.println("[FASTA] " + comment);
-            } else kmer = reverseKmer = n = 0;
+              if (out != null) out.println("[FASTA] " + comment);
+            } else kMer = reverseKMer = n = 0;
             break;
           case 'C':
             add(C);
@@ -386,7 +357,7 @@ public class CLI {
             add(U);
             break;
           default:
-            kmer = reverseKmer = n = 0;
+            kMer = reverseKMer = n = 0;
         }
         if (n == k) return;
       }
@@ -400,13 +371,13 @@ public class CLI {
     @Override
     public void update(IntegerSampler sampler) throws IOException {
       read();
-      sampler.update(Math.min(kmer, reverseKmer), 1);
+      sampler.update(Math.min(kMer, reverseKMer), 1);
     }
     
     @Override
     public void update(RealSampler sampler) throws IOException {
       read();
-      sampler.update(Math.min(kmer, reverseKmer), 1);
+      sampler.update(Math.min(kMer, reverseKMer), 1);
     }
     
     @Override
@@ -428,10 +399,5 @@ public class CLI {
       }
       return ret.reverse().toString();
     }
-  }
-  
-  @FunctionalInterface
-  public interface Updater {
-    void update(long x, double w);
   }
 }

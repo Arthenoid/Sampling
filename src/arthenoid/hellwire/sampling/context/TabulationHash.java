@@ -14,6 +14,10 @@ public class TabulationHash implements Hash {
     for (long[] tab : T) for (int i = 0; i < tab.length; i++) tab[i] = c.random();
   }
   
+  public TabulationHash(Context c) {
+    this(c, 16, 4);
+  }
+  
   @Override
   public int memoryUsed() {
     return 3 + t + (t << k);
