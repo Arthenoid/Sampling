@@ -77,11 +77,21 @@ public class Opt {
     }
   }
   
+  public static boolean checkExclusive(Opt... opts) {
+    boolean present = false;
+    for (Opt opt : opts) if (opt.present()) {
+      if (present) return false;
+        else present = true;
+    }
+    return true;
+  }
+  
   public static final Opt gen = new Opt("gen", "g");
   public static final Val<Path>
     in = Val.newPath("in", "i"),
     out = Val.newPath("out", "o");
   public static final Val<Long>
+    domainSize = Val.newPositiveIntegral("domain-size", "n"),
     kMer = Val.newPositiveIntegral("k-mer", "k"),
     seed = Val.newIntegral("seed", "s"),
     period = Val.newPositiveIntegral("period", "P").set(Long.MAX_VALUE),

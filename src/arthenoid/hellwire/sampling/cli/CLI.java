@@ -108,21 +108,27 @@ public class CLI {
   }
   
   public static void sample(Iterator<String> args) {
-    String name;
+    if (!args.hasNext()) die("Sampler not specified");
+    String name = args.next();
     long n;
-    try {
-      name = args.next();
-      n = Long.parseLong(args.next());
-      if (n <= 0) die("The domain size must be positive");
-    } catch (NoSuchElementException e) {
-      die("Sampler not specified");
-      return;
-    } catch (NumberFormatException e) {
-      die("Invalid domain size");
-      return;
-    }
-    ArgParser ap = ArgParser.create(Opt.in, Opt.out, Opt.delta, Opt.epsilon, Opt.period, Opt.seed, Opt.prime, Opt.hash, Opt.gen, Opt.kMer);
+    ArgParser ap = ArgParser.create(
+      Opt.in,
+      Opt.out,
+      Opt.domainSize,
+      Opt.delta,
+      Opt.epsilon,
+      Opt.period,
+      Opt.seed,
+      Opt.prime,
+      Opt.hash,
+      Opt.gen,
+      Opt.kMer
+    );
     tryParse(ap, args);
+    if (!Opt.checkExclusive(Opt.domainSize, Opt.gen, Opt.kMer)) {
+      if (Opt.domainSize.present()) die("Domain size needs to be specified only for the default input format.");
+        else die("Conflicting input formats specified.");
+    }
     
     Function<Context, Hash> hasher;
     if (Opt.hash.present()) {
@@ -141,44 +147,15 @@ public class CLI {
       }
     } else hasher = MurmurHash::new;
     
-    Sampler<?> sampler;
-    try {
-      sampler = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
-        .asSubclass(Sampler.class)
-        .getConstructor(Context.class, long.class, double.class, double.class)
-        .newInstance(
-          Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
-          n,
-          Opt.delta.value(),
-          Opt.epsilon.value()
-        );
-    } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-      die("Sampler not found");
-      return;
-    } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-      die("Sampler cannot be initialised: " + e.getMessage());
-      return;
-    }
-    boolean integer = sampler instanceof IntegerSampler;
-    IntegerSampler integerSampler;
-    RealSampler realSampler;
-    if (integer) {
-      integerSampler = (IntegerSampler) sampler;
-      realSampler = null;
-    } else {
-      integerSampler = null;
-      realSampler = (RealSampler) sampler;
-    }
-    
     try (
       InputStream in = Opt.in.present() ? Files.newInputStream(Opt.in.value()) : System.in;
       PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
     ) {
-      out.println("Sampler memory usage: " + sampler.memoryUsed());
-      
       InputProccessor ip;
-      if (Opt.gen.present() && Opt.kMer.present()) die("Mulitple output types specified.");
-      if (Opt.gen.present()) {
+      if (Opt.domainSize.present()) {
+        n = Opt.domainSize.value();
+        ip = new TextIP(in);
+      } else if (Opt.gen.present()) {
         GenIP gip;
         try {
           ip = gip = new GenIP(in);
@@ -188,14 +165,44 @@ public class CLI {
         }
         Format format = gip.format;
         out.printf("Test input format: %s with domain size of %d and %d updates (seed: %d)\n",  gip.name, format.n, format.updates, format.seed);
-        if (n != format.n) die("The specified domain size is different than in the input.");
+        n = format.n;
       } else if (Opt.kMer.present()) {
-        long reqN = 1 << (2 * Opt.kMer.value());
-        if (n != reqN) die("The specified domain size is different from the required (" + reqN + ")");
+        n = 1 << (2 * Opt.kMer.value());
         ip = new KmerIP(in, Opt.kMer.value(), out);
       } else {
-        ip = new TextIP(in);
+        die("Missing domain size");
+        return;
       }
+      
+      Sampler<?> sampler;
+      try {
+        sampler = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
+          .asSubclass(Sampler.class)
+          .getConstructor(Context.class, long.class, double.class, double.class)
+          .newInstance(
+            Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
+            n,
+            Opt.delta.value(),
+            Opt.epsilon.value()
+          );
+      } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+        die("Sampler not found");
+        return;
+      } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+        die("Sampler cannot be initialised: " + e.getMessage());
+        return;
+      }
+      boolean integer = sampler instanceof IntegerSampler;
+      IntegerSampler integerSampler;
+      RealSampler realSampler;
+      if (integer) {
+        integerSampler = (IntegerSampler) sampler;
+        realSampler = null;
+      } else {
+        integerSampler = null;
+        realSampler = (RealSampler) sampler;
+      }
+      out.println("Sampler memory usage: " + sampler.memoryUsed());
       
       long i = 0, period = Opt.period.value();
       while (ip.hasData()) {

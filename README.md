@@ -15,13 +15,14 @@ java -jar Sampling.jar <command> [<argument>]...
 ### Running samplers [`sample`]
 
 ```
-java -jar Sampling.jar sample <sampler> <domain size> [<argument>]...
+java -jar Sampling.jar sample <sampler> [<argument>]...
 ```
 
 |          Option         | Description                                                               |
 | :---------------------: | :------------------------------------------------------------------------ |
 |    `--in, -i <path>`    | Reads updates from the given file instead of the standard input.          |
 |    `--out, -o <path>`   | Outputs to the given file instead of the standard output.                 |
+| `--domain-size, -n <n>` | Sets the domain size.                                                     |
 |  `--delta, -d, -δ <δ>`  | Sets the sampler delta (δ)                                                |
 | `--epsilon, -e, -ε <ε>` | Sets the sampler epsilon (ε)                                              |
 |    `--period, -P <p>`   | Prints query every *p* updates. If not specified, prints only at the end. |
@@ -67,5 +68,5 @@ The generated data then can be read for sampling with the `--gen` flag;
 ### Example
 
 ```
-java -jar Sampling.jar sample Distinct 42 -hLinear --seed 42 --in=data/updates.txt
+java -jar Sampling.jar sample Distinct -n=42 -hLinear --seed 42 --in=data/updates.txt
 ```
