@@ -15,7 +15,7 @@ public class SparseRecoverer implements MemoryUser {
   }
   
   public SparseRecoverer(Context context, long n) {
-    if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be at most n^3.");
+    if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be more than n^3.");
     this.context = context;
     this.n = n;
     r = context.randomP();
