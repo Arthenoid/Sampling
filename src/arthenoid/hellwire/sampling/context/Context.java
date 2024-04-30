@@ -11,6 +11,8 @@ public interface Context {
     return random(getPrime() - 1) + 1;
   }
   
+  double randomReal();
+  
   Hash newHash();
   
   Hash staticHash(int key);

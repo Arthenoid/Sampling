@@ -7,11 +7,11 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class BasicContext implements Context {
-  final long prime;
-  final Random random;
-  final Function<Context, Hash> hasher;
+  protected final long prime;
+  protected final Random random;
+  protected final Function<Context, Hash> hasher;
   
-  final Map<Integer, Hash> staticHashes;
+  protected final Map<Integer, Hash> staticHashes;
   
   public BasicContext(long prime, Random random, Function<Context, Hash> hasher) {
     this.prime = prime;
@@ -41,6 +41,11 @@ public class BasicContext implements Context {
   @Override
   public long random(long bound) {
     return Util.randomLong(random, bound);
+  }
+  
+  @Override
+  public double randomReal() {
+    return random.nextDouble();
   }
   
   @Override

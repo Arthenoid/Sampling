@@ -38,9 +38,7 @@ public class DistinctSampler implements IntegerSampler {
     public Subsampler() {
       h = context.newHash();
       D = new SparseRecoverer[log2n + 1];
-      for (int ℓ = 0; ℓ <= log2n; ℓ++) {
-        D[ℓ] = new SparseRecoverer(context, n);
-      }
+      for (int ℓ = 0; ℓ <= log2n; ℓ++) D[ℓ] = new SparseRecoverer(context, n);
     }
     
     public void update(long i, long w) {
