@@ -29,6 +29,11 @@ public class CLI {
     System.exit(1);
   }
   
+  protected static void die(String msg, Throwable reason) {
+    while (reason.getCause() != null) reason = reason.getCause();
+    die(msg + ": " + reason.getMessage());
+  }
+  
   public static void main(String[] args) {
     main(Stream.of(args).iterator());
   }
@@ -77,7 +82,7 @@ public class CLI {
     try {
       format = Run.getFormat(name, seed, n, updates);
     } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      die("Format not found: " + e.getMessage());
+      die("Format not found", e);
       return;
     }
     try (DataOutputStream out = new DataOutputStream(Opt.out.present() ? Files.newOutputStream(Opt.out.value()) : System.out)) {
@@ -87,7 +92,7 @@ public class CLI {
       out.writeLong(updates);
       format.generate(out);
     } catch (IOException  e) {
-      die("IOException: " + e.getMessage());
+      die("IOException", e);
     }
   }
   
@@ -179,7 +184,7 @@ public class CLI {
           Opt.epsilon.value()
         );
       } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-        die("Sampler cannot be initialised: " + e.getMessage());
+        die("Sampler cannot be initialised", e);
         return;
       }
       boolean integer = sampler instanceof IntegerSampler;
@@ -199,24 +204,16 @@ public class CLI {
         if (integer) ip.update(integerSampler);
           else ip.update(realSampler);
         i++;
-        if (period > 0 && i % period == 0) out.println("After " + i + " updates: " + formatQuery(sampler, ip));
+        if (period > 0 && i % period == 0) out.println("After " + i + " updates: " + Run.formatQuery(sampler, ip));
       }
       Result<?> result = sampler.query();
-      out.println("Final (after " + i + " updates): " + formatResult(result, ip));
+      out.println("Final (after " + i + " updates): " + Run.formatResult(result, ip));
       if (Opt.gen.present() && result != null) {
         Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.i);
         out.printf("This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
       }
     } catch (IOException e) {
-      die("IO exception: " + e.getMessage());
+      die("IO exception", e);
     }
-  }
-  
-  protected static String formatResult(Result<?> result, InputProcessor ip) {
-    return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.i) + ", " + result.getWeight() + ")");
-  }
-  
-  protected static String formatQuery(Sampler<?> sampler, InputProcessor ip) {
-    return formatResult(sampler.query(), ip);
   }
 }
