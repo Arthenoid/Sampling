@@ -1,6 +1,5 @@
 package arthenoid.hellwire.sampling.cli;
 
-import static arthenoid.hellwire.sampling.cli.CLI.getFormat;
 import arthenoid.hellwire.sampling.datagen.Format;
 import arthenoid.hellwire.sampling.samplers.IntegerSampler;
 import arthenoid.hellwire.sampling.samplers.RealSampler;
@@ -56,7 +55,7 @@ public interface InputProcessor {
     
     public Gen(InputStream in) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, IOException {
       this.in = new DataInputStream(in);
-      format = getFormat(name = this.in.readUTF(), this.in.readLong(), this.in.readLong(), this.in.readLong());
+      format = Run.getFormat(name = this.in.readUTF(), this.in.readLong(), this.in.readLong(), this.in.readLong());
     }
     
     @Override

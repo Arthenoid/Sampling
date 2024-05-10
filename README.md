@@ -12,6 +12,27 @@ To build run the `build` script (`.sh` for Linux-based and `.bat` for Windows).
 java -jar Sampling.jar <command> [<argument>]...
 ```
 
+### Test data generation [`gen`]
+
+```
+java -jar Sampling.jar gen <format> <domain size> <# of updates>
+```
+
+|        Option       | Description                                                       |
+| :-----------------: | :---------------------------------------------------------------- |
+|  `--out, -o <path>` | Outputs to the given file instead of the standard output.         |
+| `--seed, -s <seed>` | Sets the generator seed. If not specified, it is chosen randomly. |
+
+If you use the character `n` as the number of updates, each index will get only one update with the final frequency.
+
+The generated data then can be read for sampling with the `--gen` flag;
+
+#### Available formats
+
+- Units: Each index has final frequency around one.
+- UnitsAndRoots: There are about √n indices with frequency around √n, the rest are around one.
+- Outlier: There is one index with frequency around n, the rest are around one.
+
 ### Running samplers [`sample`]
 
 ```
@@ -47,27 +68,6 @@ Each update consists of the (zero based) index of an item followed by the change
 - Murmur
 - MultiplyShift
 - Tabulation
-
-### Test data generation [`gen`]
-
-```
-java -jar Sampling.jar gen <format> <domain size> <# of updates>
-```
-
-|        Option       | Description                                                       |
-| :-----------------: | :---------------------------------------------------------------- |
-|  `--out, -o <path>` | Outputs to the given file instead of the standard output.         |
-| `--seed, -s <seed>` | Sets the generator seed. If not specified, it is chosen randomly. |
-
-If you use the character `n` as the number of updates, each index will get only one update with the final frequency.
-
-The generated data then can be read for sampling with the `--gen` flag;
-
-#### Available formats
-
-- Units: Each index has final frequency around one.
-- UnitsAndRoots: There are about √n indices with frequency around √n, the rest are around one.
-- Outlier: There is one index with frequency around n, the rest are around one.
 
 ### Example
 

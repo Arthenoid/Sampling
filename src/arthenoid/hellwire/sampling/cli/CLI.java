@@ -75,7 +75,7 @@ public class CLI {
     seed = Opt.seed.or(() -> (new Random()).nextLong());
     Format format;
     try {
-      format = getFormat(name, seed, n, updates);
+      format = Run.getFormat(name, seed, n, updates);
     } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
       die("Format not found: " + e.getMessage());
       return;
@@ -89,18 +89,6 @@ public class CLI {
     } catch (IOException  e) {
       die("IOException: " + e.getMessage());
     }
-  }
-  
-  protected static Format getFormat(String name, long seed, long n, long updates) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
-    return updates < 0
-      ? Class.forName("arthenoid.hellwire.sampling.datagen.SUFormat" + name)
-        .asSubclass(Format.class)
-        .getConstructor(long.class, long.class)
-        .newInstance(seed, n)
-      : Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name)
-        .asSubclass(Format.class)
-        .getConstructor(long.class, long.class, long.class)
-        .newInstance(seed, n, updates);
   }
   
   public static void sample(Iterator<String> args) {
@@ -143,6 +131,18 @@ public class CLI {
       }
     } else hasher = MurmurHash::new;
     
+    Constructor<? extends Sampler<?>> samplerConstructor;
+    try {
+      @SuppressWarnings("unchecked")
+      Constructor<? extends Sampler<?>> sw = (Constructor<? extends Sampler<?>>) Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
+        .asSubclass(Sampler.class)
+        .getConstructor(Context.class, long.class, double.class, double.class);
+      samplerConstructor = sw;
+    } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+      die("Sampler not found");
+      return;
+    }
+    
     try (
       InputStream in = Opt.in.present() ? Files.newInputStream(Opt.in.value()) : System.in;
       PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
@@ -172,19 +172,13 @@ public class CLI {
       
       Sampler<?> sampler;
       try {
-        sampler = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
-          .asSubclass(Sampler.class)
-          .getConstructor(Context.class, long.class, double.class, double.class)
-          .newInstance(
-            Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
-            n,
-            Opt.delta.value(),
-            Opt.epsilon.value()
-          );
-      } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-        die("Sampler not found");
-        return;
-      } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+        sampler = samplerConstructor.newInstance(
+          Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
+          n,
+          Opt.delta.value(),
+          Opt.epsilon.value()
+        );
+      } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
         die("Sampler cannot be initialised: " + e.getMessage());
         return;
       }
