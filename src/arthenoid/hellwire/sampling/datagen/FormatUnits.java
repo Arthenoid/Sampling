@@ -1,7 +1,6 @@
 package arthenoid.hellwire.sampling.datagen;
 
 import arthenoid.hellwire.sampling.Util;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Random;
 
@@ -11,11 +10,10 @@ public class FormatUnits extends Format {
   }
   
   @Override
-  public void generate(DataOutputStream out) throws IOException {
+  public void generate(UpdateConsumer out) throws IOException {
     Random r = new Random(seed);
     for (long i = 0; i < updates; i++) {
-      out.writeLong(Util.randomLong(r, n));
-      out.writeDouble(2 * n * r.nextDouble() / updates);
+      out.update(Util.randomLong(r, n), 2 * n * r.nextDouble() / updates);
     }
   }
   

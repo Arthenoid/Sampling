@@ -17,7 +17,19 @@ public abstract class Format {
     generate(new DataOutputStream(out));
   }
   
-  public abstract void generate(DataOutputStream out) throws IOException;
+  public void generate(DataOutputStream out) throws IOException {
+    generate((x, w) -> {
+      out.writeLong(x);
+      out.writeDouble(w);
+    });
+  }
+  
+  @FunctionalInterface
+  public interface UpdateConsumer {
+    void update(long x, double w) throws IOException;
+  }
+  
+  public abstract void generate(UpdateConsumer out) throws IOException;
   
   public static class Expectation {
     public final double weight, probability;

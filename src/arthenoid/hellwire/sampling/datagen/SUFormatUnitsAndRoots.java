@@ -2,7 +2,6 @@ package arthenoid.hellwire.sampling.datagen;
 
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.context.MurmurHash;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class SUFormatUnitsAndRoots extends SUFormat {
@@ -20,10 +19,9 @@ public class SUFormatUnitsAndRoots extends SUFormat {
   }
   
   @Override
-  public void generate(DataOutputStream out) throws IOException {
+  public void generate(UpdateConsumer out) throws IOException {
     for (long i = 0; i < n; i++) {
-      out.writeLong(i);
-      out.writeDouble(targetWeight(i));
+      out.update(i, targetWeight(i));
     }
   }
   

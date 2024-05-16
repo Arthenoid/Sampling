@@ -3,7 +3,6 @@ package arthenoid.hellwire.sampling.datagen;
 import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.context.MurmurHash;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Random;
 
@@ -22,12 +21,11 @@ public class FormatUnitsAndRoots extends Format {
   }
   
   @Override
-  public void generate(DataOutputStream out) throws IOException {
+  public void generate(UpdateConsumer out) throws IOException {
     Random r = new Random(seed);
     for (long i = 0; i < updates; i++) {
       long x = Util.randomLong(r, n);
-      out.writeLong(x);
-      out.writeDouble(2 * n * r.nextDouble() * targetWeight(x) / updates);
+      out.update(x, 2 * n * r.nextDouble() * targetWeight(x) / updates);
     }
   }
   
