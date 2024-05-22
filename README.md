@@ -61,6 +61,7 @@ Each update consists of the (zero based) index of an item followed by the change
 
 - Distinct
 - Precision
+- TrulyPerfectL2
 
 #### Available hash functions
 
