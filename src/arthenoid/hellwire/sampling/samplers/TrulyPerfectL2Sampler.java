@@ -51,7 +51,7 @@ public class TrulyPerfectL2Sampler implements IntegerSampler {
     
     protected IntegerResult query(long ζ) {
       long cc = c.get(s).c - d;
-      return context.random(ζ) < 2 * cc + 1 ? new IntegerResult(s, cc) : null;
+      return context.random(ζ) < 2 * cc + 1 ? new IntegerResult(s, cc + (cc >> 1) + 1) : null;
     }
   }
   
