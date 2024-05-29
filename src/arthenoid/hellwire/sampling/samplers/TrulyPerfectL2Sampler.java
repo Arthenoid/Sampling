@@ -1,14 +1,14 @@
 package arthenoid.hellwire.sampling.samplers;
 
-import arthenoid.hellwire.sampling.IntegerResult;
 import arthenoid.hellwire.sampling.MemoryUser;
+import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.structures.MisraGries;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-public class TrulyPerfectL2Sampler implements IntegerSampler {
+public class TrulyPerfectL2Sampler implements Sampler {
   @Override
   public double p() {
     return 2;
@@ -49,9 +49,9 @@ public class TrulyPerfectL2Sampler implements IntegerSampler {
       }
     }
     
-    protected IntegerResult query(long ζ) {
+    protected Result query(long ζ) {
       long cc = c.get(s).c - d;
-      return context.random(ζ) < 2 * cc + 1 ? new IntegerResult(s, cc + (cc >> 1) + 1) : null;
+      return context.random(ζ) < 2 * cc + 1 ? new Result(s, cc + (cc >> 1) + 1) : null;
     }
   }
   
@@ -90,10 +90,10 @@ public class TrulyPerfectL2Sampler implements IntegerSampler {
   }
   
   @Override
-  public IntegerResult query() {
+  public Result query() {
     long ζ = 2 * mg.queryMax();
     for (Subsampler subsampler : subsamplers) {
-      IntegerResult res = subsampler.query(ζ);
+      Result res = subsampler.query(ζ);
       if (res != null) return res;
     }
     return null;

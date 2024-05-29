@@ -1,14 +1,14 @@
 package arthenoid.hellwire.sampling.samplers;
 
 import arthenoid.hellwire.sampling.MemoryUser;
-import arthenoid.hellwire.sampling.RealResult;
+import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.CountSketch;
 import java.util.PriorityQueue;
 import java.util.Random;
 
-public class PrecisionSampler implements RealSampler {
+public class PrecisionSampler implements Sampler {
   @Override
   public double p() {
     return 2;
@@ -56,22 +56,22 @@ public class PrecisionSampler implements RealSampler {
       R.update(i, w);
     }
     
-    public RealResult query() {
-      PriorityQueue<RealResult> heap = new PriorityQueue<>((r1, r2) -> Double.compare(Math.abs(r1.weight), Math.abs(r2.weight)));
-      for (long i = 0; i < m; i++) heap.add(new RealResult(i, D.query(i)));
+    public Result query() {
+      PriorityQueue<Result> heap = new PriorityQueue<>((r1, r2) -> Double.compare(Math.abs(r1.w), Math.abs(r2.w)));
+      for (long i = 0; i < m; i++) heap.add(new Result(i, D.query(i)));
       for (long i = m; i < n; i++) {
-        heap.add(new RealResult(i, D.query(i)));
+        heap.add(new Result(i, D.query(i)));
         heap.remove();
       }
-      RealResult[] top = heap.toArray(RealResult[]::new);
-      RealResult peak = top[0];
+      Result[] top = heap.toArray(Result[]::new);
+      Result peak = top[0];
       for (int i = 0; i < m; i++) {
-        D.update(top[i].i, -top[i].weight);
-        if (Math.abs(top[i].weight) > Math.abs(peak.weight)) peak = top[i];
+        D.update(top[i].i, -top[i].w);
+        if (Math.abs(top[i].w) > Math.abs(peak.w)) peak = top[i];
       }
       double s = D.norm(2), r = R.norm(2);
-      for (int i = 0; i < m; i++) D.update(top[i].i, top[i].weight);
-      return s > Math.sqrt(ε * m) * r || Math.abs(peak.weight) < r / Math.sqrt(ε) ? null : new RealResult(peak.i, peak.weight * Math.sqrt(u(peak.i)));
+      for (int i = 0; i < m; i++) D.update(top[i].i, top[i].w);
+      return s > Math.sqrt(ε * m) * r || Math.abs(peak.w) < r / Math.sqrt(ε) ? null : new Result(peak.i, peak.w * Math.sqrt(u(peak.i)));
     }
   }
   
@@ -90,15 +90,16 @@ public class PrecisionSampler implements RealSampler {
   }
   
   @Override
-  public void update(long i, double w) {
+  public void update(long i, long w) {
     if (i < 0 || i >= n) throw new IllegalArgumentException("Item outside of range (" + n + "): " + i);
-    for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
+    double ww = w;
+    for (Subsampler subsampler : subsamplers) subsampler.update(i, ww);
   }
   
   @Override
-  public RealResult query() {
+  public Result query() {
     for (Subsampler subsampler : subsamplers) {
-      RealResult res = subsampler.query();
+      Result res = subsampler.query();
       if (res != null) return res;
     }
     return null;

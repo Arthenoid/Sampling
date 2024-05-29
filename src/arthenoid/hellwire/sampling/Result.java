@@ -1,11 +1,11 @@
 package arthenoid.hellwire.sampling;
 
-public abstract class Result<T extends Number> {
+public class Result {
   public final long i;
+  public final double w;
   
-  public Result(long i) {
+  public Result(long i, double w) {
     this.i = i;
+    this.w = w;
   }
-  
-  public abstract T getWeight();
 }

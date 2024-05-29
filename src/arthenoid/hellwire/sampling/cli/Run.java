@@ -18,11 +18,11 @@ public class Run {
         .newInstance(seed, n, updates);
   }
   
-  protected static String formatResult(Result<?> result, InputProcessor ip) {
-    return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.i) + ", " + result.getWeight() + ")");
+  protected static String formatResult(Result result, InputProcessor ip) {
+    return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.i) + ", " + result.w + ")");
   }
   
-  protected static String formatQuery(Sampler<?> sampler, InputProcessor ip) {
+  protected static String formatQuery(Sampler sampler, InputProcessor ip) {
     return formatResult(sampler.query(), ip);
   }
 }

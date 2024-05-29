@@ -1,6 +1,5 @@
 package arthenoid.hellwire.sampling.structures;
 
-import arthenoid.hellwire.sampling.IntegerResult;
 import arthenoid.hellwire.sampling.MemoryUser;
 import arthenoid.hellwire.sampling.context.Context;
 
@@ -28,6 +27,15 @@ public class SparseRecoverer implements MemoryUser {
     ℓ = (ℓ + w) % prime;
     z = (z + w * i) % prime;
     p = (p + w * context.powP(r, i)) % prime;
+  }
+  
+  public class IntegerResult {
+    public final long i, w;
+
+    public IntegerResult(long i, long w) {
+      this.i = i;
+      this.w = w;
+    }
   }
   
   public IntegerResult query() {

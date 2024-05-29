@@ -1,8 +1,7 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.datagen.Format;
-import arthenoid.hellwire.sampling.samplers.IntegerSampler;
-import arthenoid.hellwire.sampling.samplers.RealSampler;
+import arthenoid.hellwire.sampling.samplers.Sampler;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -15,8 +14,7 @@ import java.util.Scanner;
 
 public interface InputProcessor {
   boolean hasData();
-  void update(IntegerSampler sampler) throws IOException;
-  void update(RealSampler sampler) throws IOException;
+  void update(Sampler sampler) throws IOException;
   default String decode(long x) {
     return Long.toString(x);
   }
@@ -34,13 +32,8 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(IntegerSampler sampler) {
-      sampler.update(in.nextLong(), in.nextLong());
-    }
-    
-    @Override
-    public void update(RealSampler sampler) {
-      sampler.update(in.nextLong(), in.nextDouble());
+    public void update(Sampler sampler) {
+      sampler.update(in.nextLong(), in.nextLong()); //TODO Support real updates in text?
     }
   }
   
@@ -70,15 +63,9 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(IntegerSampler sampler) throws IOException {
+    public void update(Sampler sampler) throws IOException {
       read();
       sampler.update(x, (long) w);
-    }
-    
-    @Override
-    public void update(RealSampler sampler) throws IOException {
-      read();
-      sampler.update(x, w);
     }
   }
   
@@ -158,13 +145,7 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(IntegerSampler sampler) throws IOException {
-      read();
-      sampler.update(Math.min(kMer, reverseKMer), 1);
-    }
-    
-    @Override
-    public void update(RealSampler sampler) throws IOException {
+    public void update(Sampler sampler) throws IOException {
       read();
       sampler.update(Math.min(kMer, reverseKMer), 1);
     }

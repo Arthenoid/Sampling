@@ -1,12 +1,12 @@
 package arthenoid.hellwire.sampling.samplers;
 
-import arthenoid.hellwire.sampling.IntegerResult;
 import arthenoid.hellwire.sampling.MemoryUser;
+import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.SparseRecoverer;
 
-public class DistinctSampler implements IntegerSampler {
+public class DistinctSampler implements Sampler {
   @Override
   public double p() {
     return 0;
@@ -47,10 +47,10 @@ public class DistinctSampler implements IntegerSampler {
       for (long hash = h.toBits(i, log2n); (hash & 1) > 0; hash >>>= 1) D[ℓ++].update(i, w);
     }
     
-    public IntegerResult query() {
+    public Result query() {
       for (int ℓ = 0; ℓ <= log2n; ℓ++) {
-        IntegerResult res = D[ℓ].query();
-        if (res != null && res.weight != 0) return res;
+        SparseRecoverer.IntegerResult res = D[ℓ].query();
+        if (res != null && res.w != 0) return new Result(res.i, res.w);
       }
       return null;
     }
@@ -71,9 +71,9 @@ public class DistinctSampler implements IntegerSampler {
   }
   
   @Override
-  public IntegerResult query() {
+  public Result query() {
     for (Subsampler subsampler : subsamplers) {
-      IntegerResult res = subsampler.query();
+      Result res = subsampler.query();
       if (res != null) return res;
     }
     return null;

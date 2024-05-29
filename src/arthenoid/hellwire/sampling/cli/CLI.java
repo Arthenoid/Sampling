@@ -6,8 +6,6 @@ import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.context.MurmurHash;
 import arthenoid.hellwire.sampling.datagen.Format;
-import arthenoid.hellwire.sampling.samplers.IntegerSampler;
-import arthenoid.hellwire.sampling.samplers.RealSampler;
 import arthenoid.hellwire.sampling.samplers.Sampler;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -136,13 +134,11 @@ public class CLI {
       }
     } else hasher = MurmurHash::new;
     
-    Constructor<? extends Sampler<?>> samplerConstructor;
+    Constructor<? extends Sampler> samplerConstructor;
     try {
-      @SuppressWarnings("unchecked")
-      Constructor<? extends Sampler<?>> sw = (Constructor<? extends Sampler<?>>) Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
+      samplerConstructor = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
         .asSubclass(Sampler.class)
         .getConstructor(Context.class, long.class, double.class, double.class);
-      samplerConstructor = sw;
     } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
       die("Sampler not found");
       return;
@@ -175,7 +171,7 @@ public class CLI {
         return;
       }
       
-      Sampler<?> sampler;
+      Sampler sampler;
       try {
         sampler = samplerConstructor.newInstance(
           Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
@@ -187,26 +183,15 @@ public class CLI {
         die("Sampler cannot be initialised", e);
         return;
       }
-      boolean integer = sampler instanceof IntegerSampler;
-      IntegerSampler integerSampler;
-      RealSampler realSampler;
-      if (integer) {
-        integerSampler = (IntegerSampler) sampler;
-        realSampler = null;
-      } else {
-        integerSampler = null;
-        realSampler = (RealSampler) sampler;
-      }
       out.println("Sampler memory usage: " + sampler.memoryUsed());
       
       long i = 0, period = Opt.period.value();
       while (ip.hasData()) {
-        if (integer) ip.update(integerSampler);
-          else ip.update(realSampler);
+        ip.update(sampler);
         i++;
         if (period > 0 && i % period == 0) out.println("After " + i + " updates: " + Run.formatQuery(sampler, ip));
       }
-      Result<?> result = sampler.query();
+      Result result = sampler.query();
       out.println("Final (after " + i + " updates): " + Run.formatResult(result, ip));
       if (Opt.gen.present() && result != null) {
         Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.i);
