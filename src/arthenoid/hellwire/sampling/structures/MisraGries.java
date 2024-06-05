@@ -6,17 +6,17 @@ import java.util.Map;
 
 public class MisraGries implements MemoryUser {
   protected final int k;
-  protected long i;
+  protected long i, r;
   protected final Map<Long, Long> t;
   
   @Override
   public int memoryUsed() {
-    return 3 + 4 * k;
+    return 4 + 4 * k;
   }
   
   public MisraGries(int k) {
     this.k = k;
-    i = 0;
+    i = r = 0;
     t = new HashMap<>();
   }
   
@@ -26,11 +26,12 @@ public class MisraGries implements MemoryUser {
       long min = t.values().stream().mapToLong(Long::longValue).min().getAsLong();
       t.replaceAll((bb, ww) -> ww - min);
       t.entrySet().removeIf(bw -> bw.getValue() <= 0);
+      r += min;
     }
     i += w;
   }
   
   public long queryMax() {
-    return t.values().stream().mapToLong(Long::longValue).max().orElse(0) + (i - 1) / k + 1;
+    return t.values().stream().mapToLong(Long::longValue).max().orElse(0) + r;
   }
 }
