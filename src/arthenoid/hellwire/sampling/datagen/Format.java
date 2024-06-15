@@ -20,13 +20,13 @@ public abstract class Format {
   public void generate(DataOutputStream out) throws IOException {
     generate((x, w) -> {
       out.writeLong(x);
-      out.writeDouble(w);
+      out.writeLong(w);
     });
   }
   
   @FunctionalInterface
   public interface UpdateConsumer {
-    void update(long x, double w) throws IOException;
+    void update(long x, long w) throws IOException;
   }
   
   public abstract void generate(UpdateConsumer out) throws IOException;

@@ -9,9 +9,7 @@ public class SUFormatUnits extends SUFormat {
   
   @Override
   public void generate(UpdateConsumer out) throws IOException {
-    for (long i = 0; i < n; i++) {
-      out.update(i, 1);
-    }
+    for (long i = 0; i < n; i++) out.update(i, 1);
   }
   
   @Override

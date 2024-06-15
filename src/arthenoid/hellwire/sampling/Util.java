@@ -2,6 +2,7 @@ package arthenoid.hellwire.sampling;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.function.ToLongFunction;
 
 public class Util {
   private Util() {}
@@ -70,5 +71,13 @@ public class Util {
     long q = bound - 1, s = random.nextLong() >>> 1, r;
     while (s - (r = s % bound) + q < 0) s = random.nextLong() >>> 1;
     return r;
+  }
+  
+  public static ToLongFunction<Random> fractionalRandomLong(long numerator, long denominator) {
+    long whole = numerator / denominator;
+    double fraction = (numerator % denominator) / (double) denominator;
+    return whole > 0
+      ? r -> Util.randomLong(r, whole) + (r.nextDouble() < fraction ? 1 : 0)
+      : r -> r.nextDouble() < fraction ? 1 : 0;
   }
 }

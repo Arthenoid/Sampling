@@ -12,13 +12,11 @@ public class FormatUnits extends Format {
   @Override
   public void generate(UpdateConsumer out) throws IOException {
     Random r = new Random(seed);
-    for (long i = 0; i < updates; i++) {
-      out.update(Util.randomLong(r, n), 2 * n * r.nextDouble() / updates);
-    }
+    for (long i = 0; i < updates; i++) out.update(Util.randomLong(r, n), Util.randomLong(r, updates) < n ? 1 : 0);
   }
   
   @Override
   public Expectation expected(double p, long i) {
-    return new Expectation(1.0, 1.0 / n);
+    return new Expectation(1.0, 1.0 / Math.min(n, updates));
   }
 }

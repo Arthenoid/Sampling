@@ -2,6 +2,7 @@ package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.datagen.Format;
+import arthenoid.hellwire.sampling.datagen.SUFormat;
 import arthenoid.hellwire.sampling.samplers.Sampler;
 import java.lang.reflect.InvocationTargetException;
 
@@ -9,7 +10,7 @@ public class Run {
   protected static Format getFormat(String name, long seed, long n, long updates) throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
     return updates < 0
       ? Class.forName("arthenoid.hellwire.sampling.datagen.SUFormat" + name)
-        .asSubclass(Format.class)
+        .asSubclass(SUFormat.class)
         .getConstructor(long.class, long.class)
         .newInstance(seed, n)
       : Class.forName("arthenoid.hellwire.sampling.datagen.Format" + name)

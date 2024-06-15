@@ -40,8 +40,7 @@ public interface InputProcessor {
   class Gen implements InputProcessor {
     protected final DataInputStream in;
     protected int i = 0;
-    protected long x;
-    protected double w;
+    protected long x, w;
     
     public final String name;
     public final Format format;
@@ -58,14 +57,14 @@ public interface InputProcessor {
     
     protected void read() throws IOException {
       x = in.readLong();
-      w = in.readDouble();
+      w = in.readLong();
       i++;
     }
     
     @Override
     public void update(Sampler sampler) throws IOException {
       read();
-      sampler.update(x, (long) w);
+      sampler.update(x, w);
     }
   }
   
