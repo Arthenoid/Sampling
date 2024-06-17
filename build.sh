@@ -1,6 +1,7 @@
 #!/bin/bash
 
 shopt -s globstar
+set -e
 
 javac -Xlint -d build/ src/**/*.java
 cd build/
