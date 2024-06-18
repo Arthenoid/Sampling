@@ -14,12 +14,20 @@ import java.util.Scanner;
 
 public interface InputProcessor {
   boolean hasData();
-  void update(Sampler sampler) throws IOException;
+  void update(UpdateConsumer consumer) throws IOException;
+  default void update(Sampler sampler) throws IOException {
+    update(sampler::update);
+  }
   default String decode(long x) {
     return Long.toString(x);
   }
   
-   class Text implements InputProcessor {
+  @FunctionalInterface
+  public interface UpdateConsumer {
+    void update(long i, long w);
+  }
+  
+  class Text implements InputProcessor {
     protected final Scanner in;
     
     public Text(InputStream in) {
@@ -32,8 +40,8 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(Sampler sampler) {
-      sampler.update(in.nextLong(), in.nextLong()); //TODO Support real updates in text?
+    public void update(UpdateConsumer consumer) {
+      consumer.update(in.nextLong(), in.nextLong());
     }
   }
   
@@ -62,9 +70,9 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(Sampler sampler) throws IOException {
+    public void update(UpdateConsumer consumer) throws IOException {
       read();
-      sampler.update(x, w);
+      consumer.update(x, w);
     }
   }
   
@@ -144,9 +152,9 @@ public interface InputProcessor {
     }
     
     @Override
-    public void update(Sampler sampler) throws IOException {
+    public void update(UpdateConsumer consumer) throws IOException {
       read();
-      sampler.update(Math.min(kMer, reverseKMer), 1);
+      consumer.update(Math.min(kMer, reverseKMer), 1);
     }
     
     @Override

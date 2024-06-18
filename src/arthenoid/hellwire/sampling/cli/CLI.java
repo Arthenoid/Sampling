@@ -1,10 +1,8 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
-import arthenoid.hellwire.sampling.context.BasicContext;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
-import arthenoid.hellwire.sampling.context.MurmurHash;
 import arthenoid.hellwire.sampling.datagen.Format;
 import arthenoid.hellwire.sampling.samplers.Sampler;
 import java.io.DataOutputStream;
@@ -15,10 +13,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
 public class CLI {
@@ -44,6 +44,9 @@ public class CLI {
         break;
       case "sample":
         sample(args);
+        break;
+      case "test":
+        test(args);
         break;
       default:
         die("Unknown command");
@@ -97,17 +100,16 @@ public class CLI {
   public static void sample(Iterator<String> args) {
     if (!args.hasNext()) die("Sampler not specified");
     String name = args.next();
-    long n;
     ArgParser ap = ArgParser.create(
       Opt.in,
       Opt.out,
+      Opt.period,
       Opt.domainSize,
       Opt.delta,
       Opt.epsilon,
-      Opt.period,
-      Opt.seed,
       Opt.prime,
       Opt.hash,
+      Opt.seed,
       Opt.gen,
       Opt.kMer
     );
@@ -117,37 +119,14 @@ public class CLI {
         else die("Conflicting input formats specified.");
     }
     
-    Function<Context, Hash> hasher;
-    if (Opt.hash.present()) {
-      try {
-        Constructor<? extends Hash> hCons = Class.forName("arthenoid.hellwire.sampling.context." + Opt.hash.value() + "Hash").asSubclass(Hash.class).getConstructor(Context.class);
-        hasher = c -> {
-          try {
-            return hCons.newInstance(c);
-          } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-          }
-        };
-      } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-        die("Hash not found");
-        return;
-      }
-    } else hasher = MurmurHash::new;
-    
-    Constructor<? extends Sampler> samplerConstructor;
-    try {
-      samplerConstructor = Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
-        .asSubclass(Sampler.class)
-        .getConstructor(Context.class, long.class, double.class, double.class);
-    } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-      die("Sampler not found");
-      return;
-    }
+    Function<Context, Hash> hasher = Run.getHasher();
+    Constructor<? extends Sampler> samplerConstructor = Run.getSamplerConstructor(name);
     
     try (
       InputStream in = Opt.in.present() ? Files.newInputStream(Opt.in.value()) : System.in;
       PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
     ) {
+      long n;
       InputProcessor ip;
       if (Opt.domainSize.present()) {
         n = Opt.domainSize.value();
@@ -171,18 +150,9 @@ public class CLI {
         return;
       }
       
-      Sampler sampler;
-      try {
-        sampler = samplerConstructor.newInstance(
-          Opt.seed.present() ? new BasicContext(Opt.prime.value(), Opt.seed.value(), hasher) : new BasicContext(Opt.prime.value(), hasher),
-          n,
-          Opt.delta.value(),
-          Opt.epsilon.value()
-        );
-      } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-        die("Sampler cannot be initialised", e);
-        return;
-      }
+      Sampler sampler = Opt.seed.present()
+        ? Run.createSampler(samplerConstructor, Opt.seed.value(), hasher, n)
+        : Run.createSampler(samplerConstructor, hasher, n);
       out.println("Sampler memory usage: " + sampler.memoryUsed());
       
       long i = 0, period = Opt.period.value();
@@ -197,6 +167,59 @@ public class CLI {
         Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.i);
         out.printf("This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
       }
+    } catch (IOException e) {
+      die("IO exception", e);
+    }
+  }
+  
+  public static void test(Iterator<String> args) {
+    if (!args.hasNext()) die("Sampler not specified");
+    String samplerName = args.next();
+    if (!args.hasNext()) die("Data not specified");
+    Path[] data;
+    try {
+      Path d = Path.of(args.next());
+      data = Files.isDirectory(d) ? Files.list(d).toArray(Path[]::new) : new Path[] {d};
+    } catch (IOException e) {
+      die("IO exception", e);
+      return;
+    }
+    ArgParser ap = ArgParser.create(
+      Opt.out,
+      Opt.delta,
+      Opt.epsilon,
+      Opt.prime,
+      Opt.hash,
+      Opt.seed,
+      Opt.samplers
+    );
+    tryParse(ap, args);
+    
+    Function<Context, Hash> hasher = Run.getHasher();
+    Constructor<? extends Sampler> samplerConstructor = Run.getSamplerConstructor(samplerName);
+    LongFunction<Sampler[]> samplerFactory;
+    int m = Opt.samplers.value().intValue();
+    if (Opt.seed.present()) {
+      Random r = new Random(Opt.seed.value());
+      long[] seeds = new long[m];
+      for (int i = 0; i < m; i++) seeds[i] = Long.hashCode(r.nextLong());
+      samplerFactory = n -> {
+        Sampler[] samplers = new Sampler[m];
+        for (int i = 0; i < m; i++) samplers[i] = Run.createSampler(samplerConstructor, seeds[i], hasher, n);
+        return samplers;
+      };
+    } else {
+      samplerFactory = n -> {
+        Sampler[] samplers = new Sampler[m];
+        for (int i = 0; i < m; i++) samplers[i] = Run.createSampler(samplerConstructor, hasher, n);
+        return samplers;
+      };
+    }
+    
+    try (
+      PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
+    ) {
+      for (Path file : data) Run.testOn(file, samplerFactory, out);
     } catch (IOException e) {
       die("IO exception", e);
     }

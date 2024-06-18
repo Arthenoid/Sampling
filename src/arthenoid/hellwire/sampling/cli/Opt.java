@@ -91,11 +91,12 @@ public class Opt {
     in = Val.newPath("in", "i"),
     out = Val.newPath("out", "o");
   public static final Val<Long>
-    domainSize = Val.newPositiveIntegral("domain-size", "n"),
-    kMer = Val.newPositiveIntegral("k-mer", "k"),
-    seed = Val.newIntegral("seed", "s"),
     period = Val.newPositiveIntegral("period", "P").set(Long.MAX_VALUE),
-    prime = Val.newPositiveIntegral("prime", "p").set(1685727585142753L);
+    domainSize = Val.newPositiveIntegral("domain-size", "n"),
+    prime = Val.newPositiveIntegral("prime", "p").set(1685727585142753L),
+    seed = Val.newIntegral("seed", "s"),
+    kMer = Val.newPositiveIntegral("k-mer", "k"),
+    samplers = Val.newPositiveIntegral("samplers", "m").set(1000L);
   public static final Val<Double>
     delta = Val.newPositiveReal("delta", "d", "δ").set(1e-2),
     epsilon = Val.newPositiveReal("epsilon", "e", "ε").set(1e-2);
