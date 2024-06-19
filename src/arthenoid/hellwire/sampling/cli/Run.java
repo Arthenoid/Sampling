@@ -156,8 +156,6 @@ public class Run {
         sampleFrequencies = new double[n],
         sampleDeviations = new double[n];
       long[] sampled = new long[n];
-      double p = samplers[0].p(), normP = 0;
-      for (int i = 0; i < n; i++) normP += weights[i] = Math.pow(frequencies[i], p);
       long failed = 0, failedSub = 0, total = 0;
       for (Result[] result : results) {
         long f = 0;
@@ -205,6 +203,14 @@ public class Run {
         "- Average index average deviation: %.3g ~ %.3g\n",
         DoubleStream.of(sampleFrequencies).sum() / samples,
         IntStream.range(0, n).mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
+      );
+      double p = samplers[0].p();
+      for (int i = 0; i < n; i++) weights[i] = Math.pow(frequencies[i], p);
+      double normP = DoubleStream.of(weights).sum();
+      out.printf(
+        LOCALE,
+        "Distribution deviation: %.4g\n",
+        IntStream.range(0, n).mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
       );
       if (Opt.time.present()) out.println("Result analysys: " + formatTime(t));
     }
