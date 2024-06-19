@@ -194,23 +194,23 @@ public class Run {
       out.printf(
         LOCALE,
         "- Average sample deviation: %.3g ~ %.3g\n",
-        DoubleStream.of(sampleDeviations).sum() / samples,
-        IntStream.range(0, n).mapToDouble(i -> sampleDeviations[i] / frequencies[i]).sum() / samples
+        DoubleStream.of(sampleDeviations).unordered().parallel().sum() / samples,
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleDeviations[i] / frequencies[i]).sum() / samples
       );
       for (int i = 0; i < n; i++) if (sampled[i] > 0) sampleFrequencies[i] = Math.abs(sampleFrequencies[i] - frequencies[i] * sampled[i]);
       out.printf(
         LOCALE,
         "- Average index average deviation: %.3g ~ %.3g\n",
-        DoubleStream.of(sampleFrequencies).sum() / samples,
-        IntStream.range(0, n).mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
+        DoubleStream.of(sampleFrequencies).unordered().parallel().sum() / samples,
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
       double p = samplers[0].p();
       for (int i = 0; i < n; i++) weights[i] = Math.pow(frequencies[i], p);
-      double normP = DoubleStream.of(weights).sum();
+      double normP = DoubleStream.of(weights).unordered().parallel().sum();
       out.printf(
         LOCALE,
         "Distribution deviation: %.4g\n",
-        IntStream.range(0, n).mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
       );
       if (Opt.time.present()) out.println("Result analysys: " + formatTime(t));
     }
