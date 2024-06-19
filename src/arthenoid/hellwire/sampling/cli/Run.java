@@ -102,8 +102,8 @@ public class Run {
     return formatResult(sampler.query(), ip);
   }
   
-  protected static String formatTime(long since) {
-    long t = System.nanoTime() - since, a = t % 1000000000;
+  protected static String formatTime(long t) {
+    long a = t % 1000000000;
     t /= 1000000000;
     String ret = String.format(LOCALE, ".%09d", a);
     a = t % 60;
@@ -115,6 +115,10 @@ public class Run {
     return t == 0
       ? String.format(LOCALE, "%d:%s", a, ret)
       : String.format(LOCALE, "%d:%02d:%s", t, a, ret);
+  }
+  
+  protected static void printTime(PrintStream out, String label, long since) {
+    if (Opt.time.present()) out.printf(LOCALE, "[%s: %s]\n", label, formatTime(System.nanoTime() - since));
   }
   
   protected static void testOn(Path file, LongFunction<Sampler[]> samplerFactory, PrintStream out) throws IOException {
@@ -144,11 +148,11 @@ public class Run {
         frequencies[(int) i] += w;
         Stream.of(samplers).unordered().parallel().forEach(s -> s.update(i, w));
       });
-      if (Opt.time.present()) out.println("Update: " + formatTime(t));
+      printTime(out, "Update", t);
       
       t = System.nanoTime();
       Result[][] results = Stream.of(samplers).unordered().parallel().map(s -> s.queryAll().toArray(Result[]::new)).toArray(Result[][]::new);
-      if (Opt.time.present()) out.println("Query: " + formatTime(t));
+      printTime(out, "Query", t);
       
       t = System.nanoTime();
       double[]
@@ -212,7 +216,7 @@ public class Run {
         "Distribution deviation: %.4g\n",
         IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
       );
-      if (Opt.time.present()) out.println("Result analysys: " + formatTime(t));
+      printTime(out, "Result analysys", t);
     }
   }
 }
