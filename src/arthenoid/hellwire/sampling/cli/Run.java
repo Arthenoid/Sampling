@@ -105,15 +105,16 @@ public class Run {
   protected static String formatTime(long since) {
     long t = System.nanoTime() - since, a = t % 1000000000;
     t /= 1000000000;
-    String ret = "." + a;
+    String ret = String.format(LOCALE, ".%09d", a);
     a = t % 60;
     t /= 60;
-    ret = a + ret;
-    if (t == 0) return ret;
+    if (t == 0) return String.format(LOCALE, "%d%s", a, ret);
+    ret = String.format(LOCALE, "%02d%s", a, ret);
     a = t % 60;
     t /= 60;
-    ret = a + ":" + ret;
-    return t == 0 ? ret : t % 60 + ":" + ret;
+    return t == 0
+      ? String.format(LOCALE, "%d:%s", a, ret)
+      : String.format(LOCALE, "%d:%02d:%s", t, a, ret);
   }
   
   protected static void testOn(Path file, LongFunction<Sampler[]> samplerFactory, PrintStream out) throws IOException {
@@ -177,23 +178,31 @@ public class Run {
         return;
       }
       long samples = total - failedSub;
-      out.printf(LOCALE, "Failed samplers: %d/%d (%.2f%%)\n",
+      out.printf(
+        LOCALE,
+        "Failed samplers: %d/%d (%.2f%%)\n",
         failed,
         samplers.length,
         failed * 100.0 / samplers.length
       );
-      out.printf(LOCALE, "Failed subsamplers: %d/%d (%.2f%%)\n",
+      out.printf(
+        LOCALE,
+        "Failed subsamplers: %d/%d (%.2f%%)\n",
         failedSub,
         total,
         failedSub * 100.0 / total
       );
       out.println("Frequency estimates (absolute ~ relative):");
-      out.printf(LOCALE, "- Average sample deviation: %.3g ~ %.3g\n",
+      out.printf(
+        LOCALE,
+        "- Average sample deviation: %.3g ~ %.3g\n",
         DoubleStream.of(sampleDeviations).sum() / samples,
         IntStream.range(0, n).mapToDouble(i -> sampleDeviations[i] / frequencies[i]).sum() / samples
       );
       for (int i = 0; i < n; i++) if (sampled[i] > 0) sampleFrequencies[i] = Math.abs(sampleFrequencies[i] - frequencies[i] * sampled[i]);
-      out.printf(LOCALE, "- Average index average deviation: %.3g ~ %.3g\n",
+      out.printf(
+        LOCALE,
+        "- Average index average deviation: %.3g ~ %.3g\n",
         DoubleStream.of(sampleFrequencies).sum() / samples,
         IntStream.range(0, n).mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
