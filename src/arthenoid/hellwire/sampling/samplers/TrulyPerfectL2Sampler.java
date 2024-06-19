@@ -51,7 +51,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
     
     protected Result query(long ζ) {
       long cc = c.get(s).c - d;
-      return context.random(ζ) < 2 * cc + 1 ? new Result(s, cc + (cc >> 1) + 1) : null;
+      return context.random(ζ) < 2 * cc + 1 ? new Result(s, 1.5 * cc + 0.75 + 0.25 / (2 * cc + 1)) : null;
     }
   }
   
