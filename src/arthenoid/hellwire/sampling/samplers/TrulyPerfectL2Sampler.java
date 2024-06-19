@@ -7,6 +7,7 @@ import arthenoid.hellwire.sampling.structures.MisraGries;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.stream.Stream;
 
 public class TrulyPerfectL2Sampler implements Sampler {
   @Override
@@ -97,5 +98,11 @@ public class TrulyPerfectL2Sampler implements Sampler {
       if (res != null) return res;
     }
     return null;
+  }
+  
+  @Override
+  public Stream<Result> queryAll() {
+    long ζ = 2 * mg.queryMax();
+    return Stream.of(subsamplers).map(s -> s.query(ζ));
   }
 }

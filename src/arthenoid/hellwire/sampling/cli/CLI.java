@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
@@ -22,6 +23,8 @@ import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
 public class CLI {
+  public static final Locale LOCALE = Locale.ROOT;
+  
   protected static void die(String msg) {
     System.err.println(msg);
     System.exit(1);
@@ -140,7 +143,7 @@ public class CLI {
           return;
         }
         Format format = gip.format;
-        out.printf("Test input format: %s with domain size of %d and %d updates (seed: %d)\n",  gip.name, format.n, format.updates, format.seed);
+        out.printf(LOCALE, "Test input format: %s with domain size of %d and %d updates (seed: %d)\n",  gip.name, format.n, format.updates, format.seed);
         n = format.n;
       } else if (Opt.kMer.present()) {
         n = 1 << (2 * Opt.kMer.value());
@@ -165,7 +168,7 @@ public class CLI {
       out.println("Final (after " + i + " updates): " + Run.formatResult(result, ip));
       if (Opt.gen.present() && result != null) {
         Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.i);
-        out.printf("This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
+        out.printf(LOCALE, "This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
       }
     } catch (IOException e) {
       die("IO exception", e);
@@ -186,6 +189,7 @@ public class CLI {
     }
     ArgParser ap = ArgParser.create(
       Opt.out,
+      Opt.time,
       Opt.delta,
       Opt.epsilon,
       Opt.prime,
@@ -219,6 +223,16 @@ public class CLI {
     try (
       PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
     ) {
+      out.printf(
+        LOCALE,
+        "Testing %sSampler\nDelta: %f\nEpsilon: %f\nPrime: %d\nHash: %s\nSeed: %s\n",
+        samplerName,
+        Opt.delta.value(),
+        Opt.epsilon.value(),
+        Opt.prime.value(),
+        Opt.hash.or("Murmur"),
+        Opt.seed.present() ? Opt.seed.value() : "random"
+      );
       for (Path file : data) Run.testOn(file, samplerFactory, out);
     } catch (IOException e) {
       die("IO exception", e);

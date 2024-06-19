@@ -86,7 +86,9 @@ public class Opt {
     return true;
   }
   
-  public static final Opt gen = new Opt("gen", "g");
+  public static final Opt
+    gen = new Opt("gen", "g"),
+    time = new Opt("time", "t");
   public static final Val<Path>
     in = Val.newPath("in", "i"),
     out = Val.newPath("out", "o");

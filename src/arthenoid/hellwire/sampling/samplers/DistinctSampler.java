@@ -5,6 +5,7 @@ import arthenoid.hellwire.sampling.Result;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.SparseRecoverer;
+import java.util.stream.Stream;
 
 public class DistinctSampler implements Sampler {
   @Override
@@ -77,5 +78,10 @@ public class DistinctSampler implements Sampler {
       if (res != null) return res;
     }
     return null;
+  }
+  
+  @Override
+  public Stream<Result> queryAll() {
+    return Stream.of(subsamplers).map(Subsampler::query);
   }
 }

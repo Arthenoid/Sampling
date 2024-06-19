@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
+import static arthenoid.hellwire.sampling.cli.CLI.LOCALE;
 import static arthenoid.hellwire.sampling.cli.CLI.die;
 import arthenoid.hellwire.sampling.context.BasicContext;
 import arthenoid.hellwire.sampling.context.Context;
@@ -99,7 +100,22 @@ public class Run {
     return formatResult(sampler.query(), ip);
   }
   
+  protected static String formatTime(long since) {
+    long t = System.nanoTime() - since, a = t % 1000000000;
+    t /= 1000000000;
+    String ret = "." + a;
+    a = t % 60;
+    t /= 60;
+    ret = a + ret;
+    if (t == 0) return ret;
+    a = t % 60;
+    t /= 60;
+    ret = a + ":" + ret;
+    return t == 0 ? ret : t % 60 + ":" + ret;
+  }
+  
   protected static void testOn(Path file, LongFunction<Sampler[]> samplerFactory, PrintStream out) throws IOException {
+    out.println("================================");
     out.println("Testing on file: " + file);
     try (
       InputStream in = Files.newInputStream(file)
@@ -112,18 +128,44 @@ public class Run {
         return;
       }
       Format format = ip.format;
-      out.printf("Input format: %s with domain size of %d and %d updates (seed: %d)\n",  ip.name, format.n, format.updates, format.seed);
+      out.printf(LOCALE, "Input format: %s with domain size of %d and %d updates (seed: %d)\n",  ip.name, format.n, format.updates, format.seed);
       
       Sampler[] samplers = samplerFactory.apply(format.n);
       out.println("Sampler memory usage: " + samplers[0].memoryUsed());
       
-      while (ip.hasData()) ip.update((i, w) -> Stream.of(samplers).unordered().parallel().forEach(s -> s.update(i, w)));
+      long[] actual = new long[(int) format.n];
       
-      out.printf(
-        "%d out of %d failed\n",
-        Stream.of(samplers).unordered().parallel().mapToLong(s -> s.query() == null ? 1 : 0).sum(),
-        samplers.length
+      long t = System.nanoTime();
+      while (ip.hasData()) ip.update((i, w) -> {
+        actual[(int) i] += w;
+        Stream.of(samplers).unordered().parallel().forEach(s -> s.update(i, w));
+      });
+      if (Opt.time.present()) out.println("Update: " + formatTime(t));
+      
+      t = System.nanoTime();
+      Result[][] results = Stream.of(samplers).unordered().parallel().map(s -> s.queryAll().toArray(Result[]::new)).toArray(Result[][]::new);
+      if (Opt.time.present()) out.println("Query: " + formatTime(t));
+      
+      t = System.nanoTime();
+      long failed = 0, failedSub = 0, total = 0;
+      for (Result[] result : results) {
+        long f = 0;
+        for (Result r : result) if (r == null) f++;
+        if (f == result.length) failed++;
+        failedSub += f;
+        total += result.length;
+      }
+      out.printf(LOCALE, "Failed samplers: %d/%d (%.2f%%)\n",
+        failed,
+        samplers.length,
+        failed * 100.0 / samplers.length
       );
+      out.printf(LOCALE, "Failed subsamplers: %d/%d (%.2f%%)\n",
+        failedSub,
+        total,
+        failedSub * 100.0 / total
+      );
+      if (Opt.time.present()) out.println("Result analysys: " + formatTime(t));
     }
   }
 }

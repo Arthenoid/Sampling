@@ -7,6 +7,7 @@ import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.structures.CountSketch;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.stream.Stream;
 
 public class PrecisionSampler implements Sampler {
   @Override
@@ -103,5 +104,10 @@ public class PrecisionSampler implements Sampler {
       if (res != null) return res;
     }
     return null;
+  }
+  
+  @Override
+  public Stream<Result> queryAll() {
+    return Stream.of(subsamplers).map(Subsampler::query);
   }
 }
