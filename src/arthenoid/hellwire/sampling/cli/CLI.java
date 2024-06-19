@@ -225,7 +225,7 @@ public class CLI {
     ) {
       out.printf(
         LOCALE,
-        "Testing %sSampler\nDelta: %f\nEpsilon: %f\nPrime: %d\nHash: %s\nSeed: %s\n",
+        "Testing %sSampler\nDelta: %.2g\nEpsilon: %.2g\nPrime: %d\nHash: %s\nSeed: %s\n",
         samplerName,
         Opt.delta.value(),
         Opt.epsilon.value(),

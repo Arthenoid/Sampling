@@ -19,6 +19,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Run {
@@ -133,11 +135,12 @@ public class Run {
       Sampler[] samplers = samplerFactory.apply(format.n);
       out.println("Sampler memory usage: " + samplers[0].memoryUsed());
       
-      long[] actual = new long[(int) format.n];
+      int n = (int) format.n;
+      long[] frequencies = new long[n];
       
       long t = System.nanoTime();
       while (ip.hasData()) ip.update((i, w) -> {
-        actual[(int) i] += w;
+        frequencies[(int) i] += w;
         Stream.of(samplers).unordered().parallel().forEach(s -> s.update(i, w));
       });
       if (Opt.time.present()) out.println("Update: " + formatTime(t));
@@ -147,14 +150,33 @@ public class Run {
       if (Opt.time.present()) out.println("Query: " + formatTime(t));
       
       t = System.nanoTime();
+      double[]
+        weights = new double[n],
+        sampleFrequencies = new double[n],
+        sampleDeviations = new double[n];
+      long[] sampled = new long[n];
+      double p = samplers[0].p(), normP = 0;
+      for (int i = 0; i < n; i++) normP += weights[i] = Math.pow(frequencies[i], p);
       long failed = 0, failedSub = 0, total = 0;
       for (Result[] result : results) {
         long f = 0;
-        for (Result r : result) if (r == null) f++;
+        for (Result r : result) if (r == null) {
+          f++;
+        } else {
+          int i = (int) r.i;
+          sampleFrequencies[i] += r.w;
+          sampleDeviations[i] += Math.abs(r.w - frequencies[i]);
+          sampled[i]++;
+        }
         if (f == result.length) failed++;
         failedSub += f;
         total += result.length;
       }
+      if (failedSub == total) {
+        out.println("All samplers failed.");
+        return;
+      }
+      long samples = total - failedSub;
       out.printf(LOCALE, "Failed samplers: %d/%d (%.2f%%)\n",
         failed,
         samplers.length,
@@ -164,6 +186,16 @@ public class Run {
         failedSub,
         total,
         failedSub * 100.0 / total
+      );
+      out.println("Frequency estimates (absolute ~ relative):");
+      out.printf(LOCALE, "- Average sample deviation: %.3g ~ %.3g\n",
+        DoubleStream.of(sampleDeviations).sum() / samples,
+        IntStream.range(0, n).mapToDouble(i -> sampleDeviations[i] / frequencies[i]).sum() / samples
+      );
+      for (int i = 0; i < n; i++) if (sampled[i] > 0) sampleFrequencies[i] = Math.abs(sampleFrequencies[i] - frequencies[i] * sampled[i]);
+      out.printf(LOCALE, "- Average index average deviation: %.3g ~ %.3g\n",
+        DoubleStream.of(sampleFrequencies).sum() / samples,
+        IntStream.range(0, n).mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
       if (Opt.time.present()) out.println("Result analysys: " + formatTime(t));
     }
