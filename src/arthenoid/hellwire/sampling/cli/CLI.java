@@ -6,6 +6,7 @@ import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.datagen.Format;
 import arthenoid.hellwire.sampling.samplers.Sampler;
 import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -33,6 +34,10 @@ public class CLI {
   protected static void die(String msg, Throwable reason) {
     while (reason.getCause() != null) reason = reason.getCause();
     die(msg + ": " + reason.getMessage());
+  }
+  
+  protected static PrintStream getOut() throws IOException {
+    return Opt.out.present() ? new PrintStream(new FileOutputStream(Opt.out.value().toFile()), true, StandardCharsets.UTF_8) : System.out;
   }
   
   public static void main(String[] args) {
@@ -127,7 +132,7 @@ public class CLI {
     
     try (
       InputStream in = Opt.in.present() ? Files.newInputStream(Opt.in.value()) : System.in;
-      PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
+      PrintStream out = getOut()
     ) {
       long n;
       InputProcessor ip;
@@ -220,9 +225,7 @@ public class CLI {
       };
     }
     
-    try (
-      PrintStream out = Opt.out.present() ? new PrintStream(Opt.out.value().toFile(), StandardCharsets.UTF_8) : System.out
-    ) {
+    try (PrintStream out = getOut()) {
       out.printf(
         LOCALE,
         "Testing %sSampler\nDelta:   %.2g\nEpsilon: %.2g\nPrime:   %d\nHash:    %s\nSeed:    %s\n",
