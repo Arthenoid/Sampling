@@ -202,7 +202,8 @@ public class CLI {
       Opt.prime,
       Opt.hash,
       Opt.seed,
-      Opt.samplers
+      Opt.samplers,
+      Opt.buffer
     );
     tryParse(ap, args);
     

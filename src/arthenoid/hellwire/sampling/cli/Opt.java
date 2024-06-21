@@ -99,7 +99,8 @@ public class Opt {
     prime = Val.newPositiveIntegral("prime", "p").set(1685727585142753L),
     seed = Val.newIntegral("seed", "s"),
     kMer = Val.newPositiveIntegral("k-mer", "k"),
-    samplers = Val.newPositiveIntegral("samplers", "m").set(1000L);
+    samplers = Val.newPositiveIntegral("samplers", "m").set(1000L),
+    buffer = Val.newPositiveIntegral("buffer", "b").set(1000000L);
   public static final Val<Double>
     delta = Val.newPositiveReal("delta", "d", "δ").set(1e-2),
     epsilon = Val.newPositiveReal("epsilon", "e", "ε").set(1e-2);
