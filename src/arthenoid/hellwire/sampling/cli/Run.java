@@ -121,6 +121,8 @@ public class Run {
     if (Opt.time.present()) out.printf(LOCALE, "[%s: %s]\n", label, formatTime(System.nanoTime() - since));
   }
   
+  public static final int TEST_BUFFER_SIZE = 1000;
+  
   protected static void testOn(Path file, LongFunction<Sampler[]> samplerFactory, PrintStream out) throws IOException {
     out.println("================================");
     out.println("Testing on file: " + file);
@@ -145,10 +147,25 @@ public class Run {
       long[] frequencies = new long[n];
       
       long t = System.nanoTime();
-      while (ip.hasData()) ip.update((i, w) -> {
-        frequencies[(int) i] += w;
-        Stream.of(samplers).unordered().parallel().forEach(s -> s.update(i, w));
-      });
+      long[]
+        buffIndex = new long[TEST_BUFFER_SIZE],
+        buffDiff = new long[TEST_BUFFER_SIZE];
+      while (ip.hasData()) {
+        int fill = 0;
+        while (fill < TEST_BUFFER_SIZE && ip.hasData()) {
+          int index = fill;
+          ip.update((i, w) -> {
+            frequencies[(int) i] += w;
+            buffIndex[index] = i;
+            buffDiff[index] = w;
+          });
+          fill++;
+        }
+        int to = fill;
+        Stream.of(samplers).unordered().parallel().forEach(s -> {
+          for (int i = 0; i < to; i++) s.update(buffIndex[i], buffDiff[i]);
+        });
+      }
       printTime(out, "Update", t);
       
       t = System.nanoTime();
