@@ -38,16 +38,24 @@ public class TrulyPerfectL2Sampler implements Sampler {
       return 3;
     }
     
+    protected long nextAfter(long current) {
+      return (long) Math.ceil(current / context.randomReal());
+    }
+    
     protected void reset(long i, Counter ctr) {
       if (i != s) {
         if (--c.get(s).refs < 1) c.remove(s);
         s = i;
         ctr.refs++;
       }
-      while (tt <= t) {
-        d = ctr.c - (t - tt);
-        tt = (long) Math.ceil(tt / context.randomReal());
+      long ttt = nextAfter(tt);
+      if (ttt <= t) {
+        tt += context.random(t - tt + 1);
+        //tt += (long) Math.ceil(context.randomReal() * (t - tt + 1));
+        ttt = nextAfter(t);
       }
+      d = ctr.c - (t - tt);
+      tt = ttt;
     }
     
     protected Result query(long ζ) {
