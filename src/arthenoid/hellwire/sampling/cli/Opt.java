@@ -88,7 +88,8 @@ public class Opt {
   
   public static final Opt
     gen = new Opt("gen", "g"),
-    time = new Opt("time", "t");
+    time = new Opt("time", "t"),
+    distribution = new Opt("distribution", "D");
   public static final Val<Path>
     in = Val.newPath("in", "i"),
     out = Val.newPath("out", "o");

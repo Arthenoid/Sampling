@@ -196,6 +196,7 @@ public class CLI {
     ArgParser ap = ArgParser.create(
       Opt.out,
       Opt.time,
+      Opt.distribution,
       Opt.delta,
       Opt.epsilon,
       Opt.prime,

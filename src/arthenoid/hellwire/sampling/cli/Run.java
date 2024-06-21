@@ -215,9 +215,23 @@ public class Run {
       out.printf(
         LOCALE,
         "Distribution deviation: %.4g\n",
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / normP)).sum() / 2
       );
       printTime(out, "Result analysys", t);
+      
+      if (Opt.distribution.present()) {
+        t = System.nanoTime();
+        out.println("Distribution:");
+        for (int i = 0; i < n; i++) out.printf(
+          LOCALE,
+          "- %d:\n  - Expected: %.3g\n  - Actual:   %.3g\n",
+          i,
+          weights[i] / normP,
+          sampled[i] / (double) samples
+        );
+        printTime(out, "Distribution", t);
+      }
+      
       printTime(out, "Total", tt);
     }
   }
