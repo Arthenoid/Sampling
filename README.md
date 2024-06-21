@@ -38,6 +38,8 @@ The generated data then can be read for sampling with the `--gen` flag.
 - Units: Each index has final frequency around one.
 - UnitsAndRoots: There are about √n indices with frequency around √n, the rest are around one.
 - Outlier: There is one index with frequency around n, the rest are around one.
+- Uniform: Each update uniformly choses an index and a value between 0 and √n.
+- PowerLaw: The final frewuencies follow the power law.
 
 ### Running samplers [`sample`]
 
