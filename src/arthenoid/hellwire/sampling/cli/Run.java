@@ -127,6 +127,7 @@ public class Run {
     try (
       InputStream in = Files.newInputStream(file)
     ) {
+      long tt = System.nanoTime();
       InputProcessor.Gen ip;
       try {
         ip = new InputProcessor.Gen(in);
@@ -217,6 +218,7 @@ public class Run {
         IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / samples - weights[i] / normP)).sum() / 2
       );
       printTime(out, "Result analysys", t);
+      printTime(out, "Total", tt);
     }
   }
 }

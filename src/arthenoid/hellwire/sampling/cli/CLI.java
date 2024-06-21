@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
+import static arthenoid.hellwire.sampling.cli.Run.printTime;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.datagen.Format;
@@ -226,6 +227,7 @@ public class CLI {
     }
     
     try (PrintStream out = getOut()) {
+      long t = System.nanoTime();
       out.printf(
         LOCALE,
         "Testing %sSampler\nDelta:   %.2g\nEpsilon: %.2g\nPrime:   %d\nHash:    %s\nSeed:    %s\n",
@@ -237,6 +239,8 @@ public class CLI {
         Opt.seed.present() ? Opt.seed.value() : "random"
       );
       for (Path file : data) Run.testOn(file, samplerFactory, out);
+      out.println("================================");
+      printTime(out, "All files total", t);
     } catch (IOException e) {
       die("IO exception", e);
     }
