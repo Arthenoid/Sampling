@@ -96,7 +96,7 @@ public class Opt {
   public static final Val<Long>
     period = Val.newPositiveIntegral("period", "P").set(Long.MAX_VALUE),
     domainSize = Val.newPositiveIntegral("domain-size", "n"),
-    prime = Val.newPositiveIntegral("prime", "p").set(1685727585142753L),
+    prime = Val.newPositiveIntegral("prime", "p").set(1199256178700994257L),
     seed = Val.newIntegral("seed", "s"),
     kMer = Val.newPositiveIntegral("k-mer", "k"),
     samplers = Val.newPositiveIntegral("samplers", "m").set(1000L),

@@ -228,11 +228,15 @@ public class Run {
       );
       double p = samplers[0].p();
       for (int i = 0; i < n; i++) weights[i] = Math.pow(frequencies[i], p);
-      double normP = DoubleStream.of(weights).unordered().parallel().sum();
+      double
+        pNorm = DoubleStream.of(weights).unordered().parallel().sum(),
+        pNormCA = IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> weights[i]).sum();
       out.printf(
         LOCALE,
-        "Distribution deviation: %.4g\n",
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / normP)).sum() / 2
+        "Distribution deviation: %.4g\n- Coverage adjusted: %.4g with %.4g coverage\n",
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / pNorm)).sum() / 2,
+        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / pNormCA)).sum() / 2,
+        pNormCA / pNorm
       );
       printTime(out, "Result analysys", t);
       
@@ -243,7 +247,7 @@ public class Run {
           LOCALE,
           "- %d:\n  - Expected: %.3g\n  - Actual:   %.3g\n",
           i,
-          weights[i] / normP,
+          weights[i] / pNorm,
           sampled[i] / (double) samples
         );
         printTime(out, "Distribution", t);
