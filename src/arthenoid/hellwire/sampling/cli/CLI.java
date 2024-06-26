@@ -228,6 +228,12 @@ public class CLI {
       };
     }
     
+    if (Opt.out.present() && Files.isDirectory(Opt.out.value())) Opt.out.set(Opt.out.value().resolve(String.format(
+      LOCALE,
+      "report-%1$tF-%1$tH-%1$tM-%1$tS.txt",
+      System.currentTimeMillis()
+    )));
+    
     try (PrintStream out = getOut()) {
       long t = System.nanoTime();
       out.printf(
