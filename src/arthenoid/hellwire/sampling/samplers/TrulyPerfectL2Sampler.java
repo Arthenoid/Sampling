@@ -100,7 +100,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
   
   @Override
   public Result query() {
-    long ζ = 2 * mg.queryMax();
+    long ζ = 2 * mg.queryMax() - 1;
     for (Subsampler subsampler : subsamplers) {
       Result res = subsampler.query(ζ);
       if (res != null) return res;
@@ -110,7 +110,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
   
   @Override
   public Stream<Result> queryAll() {
-    long ζ = 2 * mg.queryMax();
+    long ζ = 2 * mg.queryMax() - 1;
     return Stream.of(subsamplers).map(s -> s.query(ζ));
   }
 }

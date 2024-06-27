@@ -9,12 +9,13 @@ public class CountSketch implements MemoryUser {
   protected final Context context;
   protected final int d, t;
   protected final double[][] C;
-  protected final Hash[] h, g;
+  protected final Hash[] h;
+  protected final double[] e;
   
   @Override
   public int memoryUsed() {
     int m = 5 + d * (t + 3);
-    for (int i = 0; i < d; i++) m += h[i].memoryUsed() + g[i].memoryUsed();
+    for (int i = 0; i < d; i++) m += h[i].memoryUsed();
     return m;
   }
   
@@ -24,11 +25,8 @@ public class CountSketch implements MemoryUser {
     this.d = d;
     C = new double[d][t];
     h = new Hash[d];
-    g = new Hash[d];
-    for (int j = 0; j < d; j++) {
-      h[j] = context.newHash();
-      g[j] = context.newHash();
-    }
+    for (int j = 0; j < d; j++) h[j] = context.newHash();
+    e = new double[d];
   }
   
   public CountSketch(CountSketch other) {
@@ -37,26 +35,38 @@ public class CountSketch implements MemoryUser {
     t = other.t;
     C = new double[d][t];
     h = other.h;
-    g = other.g;
+    e = new double[d];
+  }
+  
+  protected static int hashCell(long hash) {
+    return (int) (hash >> 1);
+  }
+  
+  protected static double hashSign(long hash) {
+    return ((hash & 1) << 1) - 1;
   }
   
   public void update(long i, double w) {
-    for (int j = 0; j < d; j++) C[j][(int) h[j].toRange(i, t)] += w * g[j].toSign(i);
+    for (int j = 0; j < d; j++) {
+      long hash = h[j].toRange(i, t << 1);
+      C[j][hashCell(hash)] += w * hashSign(hash);
+    }
   }
   
   public double query(long x) {
-    double[] e = new double[d];
-    for (int j = 0; j < d; j++) e[j] = C[j][(int) h[j].toRange(x, t)] * g[j].toSign(x);
+    for (int j = 0; j < d; j++) {
+      long hash = h[j].toRange(x, t << 1);
+      e[j] = C[j][hashCell(hash)] * hashSign(hash);
+    }
     return Util.mutMedian(e);
   }
   
   public void merge(CountSketch other) {
-    if (other.context != context || other.h != h || other.g != g) throw new IllegalArgumentException("Sketches have different parameters.");
+    if (other.context != context || other.h != h) throw new IllegalArgumentException("Sketches have different parameters.");
     for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
   }
   
   public double norm(double p) {
-    double[] e = new double[d];
     for (int j = 0; j < d; j++) {
       e[j] = 0;
       for (int i = 0; i < t; i++) e[j] += Math.pow(Math.abs(C[j][i]), p);
