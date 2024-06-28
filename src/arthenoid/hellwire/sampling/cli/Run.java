@@ -18,7 +18,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
-import java.util.function.LongFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -52,21 +51,16 @@ public class Run {
     }
   }
   
-  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, Context context, long n) {
-    try {
-      return constructor.newInstance(
-        context,
-        n,
-        Opt.delta.value(),
-        Opt.epsilon.value()
-      );
-    } catch (SecurityException | IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-      die("Sampler cannot be initialised", e);
-      return null;
-    }
+  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, Context context, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException {
+    return constructor.newInstance(
+      context,
+      n,
+      Opt.delta.value(),
+      Opt.epsilon.value()
+    );
   }
   
-  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, long seed, Function<Context, Hash> hasher, long n) {
+  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, long seed, Function<Context, Hash> hasher, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException {
     return createSampler(
       constructor,
       new BasicContext(Opt.prime.value(), seed, hasher),
@@ -74,7 +68,7 @@ public class Run {
     );
   }
   
-  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, Function<Context, Hash> hasher, long n) {
+  protected static Sampler createSampler(Constructor<? extends Sampler> constructor, Function<Context, Hash> hasher, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException {
     return createSampler(
       constructor,
       new BasicContext(Opt.prime.value(), hasher),
@@ -121,8 +115,12 @@ public class Run {
     if (Opt.time.present()) out.printf(LOCALE, "[%s: %s]\n", label, formatTime(System.nanoTime() - since));
   }
   
+  @FunctionalInterface
+  public interface SamplerFactory {
+    Sampler[] create(long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException;
+  }
   
-  protected static void testOn(Path file, LongFunction<Sampler[]> samplerFactory, PrintStream out) throws IOException {
+  protected static void testOn(Path file, SamplerFactory samplerFactory, PrintStream out) throws IOException {
     out.println("================================");
     out.println("Testing on file: " + file);
     try (
@@ -133,13 +131,19 @@ public class Run {
       try {
         ip = new InputProcessor.Gen(in);
       } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException  e) {
-        die("Invalid data format");
+        out.println("Invalid data format");
         return;
       }
       Format format = ip.format;
       out.printf(LOCALE, "Input format: %s with domain size of %d and %d updates (seed: %d)\n",  ip.name, format.n, format.updates, format.seed);
       
-      Sampler[] samplers = samplerFactory.apply(format.n);
+      Sampler[] samplers;
+      try {
+        samplers = samplerFactory.create(format.n);
+      } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+        out.printf(LOCALE, "Sampler cannot be initialised: %s\n", CLI.getMessage(e));
+        return;
+      }
       out.println("Sampler memory usage: " + samplers[0].memoryUsed());
       
       int n = (int) format.n;

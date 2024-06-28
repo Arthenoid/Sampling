@@ -21,7 +21,6 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
-import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
 public class CLI {
@@ -33,8 +32,12 @@ public class CLI {
   }
   
   protected static void die(String msg, Throwable reason) {
-    while (reason.getCause() != null) reason = reason.getCause();
-    die(msg + ": " + reason.getMessage());
+    die(msg + ": " + getMessage(reason));
+  }
+  
+  protected static String getMessage(Throwable t) {
+    while (t.getCause() != null) t = t.getCause();
+    return t.getMessage();
   }
   
   protected static PrintStream getOut() throws IOException {
@@ -159,9 +162,15 @@ public class CLI {
         return;
       }
       
-      Sampler sampler = Opt.seed.present()
-        ? Run.createSampler(samplerConstructor, Opt.seed.value(), hasher, n)
-        : Run.createSampler(samplerConstructor, hasher, n);
+      Sampler sampler;
+      try {
+        sampler = Opt.seed.present()
+          ? Run.createSampler(samplerConstructor, Opt.seed.value(), hasher, n)
+          : Run.createSampler(samplerConstructor, hasher, n);
+      } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+        die("Sampler cannot be initialised", e);
+        return;
+      }
       out.println("Sampler memory usage: " + sampler.memoryUsed());
       
       long i = 0, period = Opt.period.value();
@@ -209,7 +218,7 @@ public class CLI {
     
     Function<Context, Hash> hasher = Run.getHasher();
     Constructor<? extends Sampler> samplerConstructor = Run.getSamplerConstructor(samplerName);
-    LongFunction<Sampler[]> samplerFactory;
+    Run.SamplerFactory samplerFactory;
     int m = Opt.samplers.value().intValue();
     if (Opt.seed.present()) {
       Random r = new Random(Opt.seed.value());
