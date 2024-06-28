@@ -18,6 +18,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -120,6 +122,8 @@ public class Run {
     Sampler[] create(long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException;
   }
   
+  public static final Predicate<String> HAS_FASTA_EXTENSION = Pattern.compile(".*\\.fa(s(ta)?)?", Pattern.CASE_INSENSITIVE).asMatchPredicate();
+  
   protected static void testOn(Path file, SamplerFactory samplerFactory, PrintStream out) throws IOException {
     out.println("================================");
     out.println("Testing on file: " + file);
@@ -127,30 +131,44 @@ public class Run {
       InputStream in = Files.newInputStream(file)
     ) {
       long tt = System.nanoTime();
-      InputProcessor.Gen ip;
-      try {
-        ip = new InputProcessor.Gen(in);
-      } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException  e) {
-        out.println("Invalid data format");
-        return;
+      
+      int n, size;
+      InputProcessor ip;
+      if (HAS_FASTA_EXTENSION.test(file.toString())) {
+        if (!Opt.kMer.present()) {
+          out.println("Input is a FASTA file, but the value for k was not specified.");
+          return;
+        }
+        ip = new InputProcessor.KMer(in, Opt.kMer.value(), out);
+        n = 1 << (2 * Opt.kMer.value());
+        size = (int) Files.size(file);
+      } else {
+        InputProcessor.Gen gip;
+        try {
+          ip = gip = new InputProcessor.Gen(in);
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException  e) {
+          out.println("Invalid data format");
+          return;
+        }
+        Format format = gip.format;
+        out.printf(LOCALE, "Input format: %s with domain size of %d and %d updates (seed: %d)\n",  gip.name, format.n, format.updates, format.seed);
+        n = (int) format.n;
+        size = (int) format.updates;
       }
-      Format format = ip.format;
-      out.printf(LOCALE, "Input format: %s with domain size of %d and %d updates (seed: %d)\n",  ip.name, format.n, format.updates, format.seed);
       
       Sampler[] samplers;
       try {
-        samplers = samplerFactory.create(format.n);
+        samplers = samplerFactory.create(n);
       } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
         out.printf(LOCALE, "Sampler cannot be initialised: %s\n", CLI.getMessage(e));
         return;
       }
       out.println("Sampler memory usage: " + samplers[0].memoryUsed());
       
-      int n = (int) format.n;
       long[] frequencies = new long[n];
       
       long t = System.nanoTime();
-      int bufferSize = Math.min(Opt.buffer.value().intValue(), (int) format.updates);
+      int bufferSize = Math.min(Opt.buffer.value().intValue(), size);
       long[]
         buffIndex = new long[bufferSize],
         buffDiff = new long[bufferSize];
