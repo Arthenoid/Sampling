@@ -194,9 +194,10 @@ public class CLI {
     if (!args.hasNext()) die("Sampler not specified");
     String samplerName = args.next();
     if (!args.hasNext()) die("Data not specified");
+    String dataPath = args.next();
     Path[] data;
     try {
-      Path d = Path.of(args.next());
+      Path d = Path.of(dataPath);
       data = Files.isDirectory(d) ? Files.list(d).toArray(Path[]::new) : new Path[] {d};
     } catch (IOException e) {
       die("IO exception", e);
@@ -240,8 +241,10 @@ public class CLI {
     
     if (Opt.out.present() && Files.isDirectory(Opt.out.value())) Opt.out.set(Opt.out.value().resolve(String.format(
       LOCALE,
-      "report-%1$tF-%1$tH-%1$tM-%1$tS.txt",
-      System.currentTimeMillis()
+      "report-%1$tF-%1$tH-%1$tM-%1$tS-%2$s-%3$s.txt",
+      System.currentTimeMillis(),
+      samplerName,
+      dataPath.replace('/', '#')
     )));
     
     try (PrintStream out = getOut()) {
