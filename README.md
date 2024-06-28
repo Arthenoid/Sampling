@@ -24,10 +24,10 @@ java -jar Sampling.jar sample Distinct -n=42 -hLinear --seed 42 --in=data/update
 java -jar Sampling.jar gen <format> <domain size> <# of updates>
 ```
 
-|        Option       | Description                                                       |
-| :-----------------: | :---------------------------------------------------------------- |
-|  `--out, -o <path>` | Outputs to the given file instead of the standard output.         |
-| `--seed, -s <seed>` | Sets the generator seed. If not specified, it is chosen randomly. |
+|        Option       | Description                                                                                                                                             |
+| :-----------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|  `--out, -o <path>` | Outputs to the given file instead of the standard output. If the path is a directory, a filename including the parameters will be automatically chosen. |
+| `--seed, -s <seed>` | Sets the generator seed. If not specified, it is chosen randomly.                                                                                       |
 
 If you use the character `n` as the number of updates, each index will get only one update with the final frequency.
 

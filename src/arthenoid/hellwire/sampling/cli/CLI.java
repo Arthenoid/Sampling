@@ -98,6 +98,16 @@ public class CLI {
       die("Format not found", e);
       return;
     }
+    
+    if (Opt.out.present() && Files.isDirectory(Opt.out.value())) Opt.out.set(Opt.out.value().resolve(String.format(
+      LOCALE,
+      "%s-%d-%s-%d.bin",
+      name,
+      n,
+      updates < 0 ? "n" : updates,
+      seed
+    )));
+    
     try (DataOutputStream out = new DataOutputStream(Opt.out.present() ? Files.newOutputStream(Opt.out.value()) : System.out)) {
       out.writeUTF(name);
       out.writeLong(seed);
