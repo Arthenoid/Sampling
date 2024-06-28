@@ -67,7 +67,6 @@ public class DistinctSampler implements Sampler {
   
   @Override
   public void update(long i, long w) {
-    if (i < 0 || i >= n) throw new IllegalArgumentException("Item outside of range (" + n + "): " + i);
     for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
   }
   

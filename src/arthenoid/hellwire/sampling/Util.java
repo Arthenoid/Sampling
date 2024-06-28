@@ -7,6 +7,16 @@ import java.util.function.ToLongFunction;
 public class Util {
   private Util() {}
   
+  public static long powMod(long a, long b, long m) {
+    long ret = 1;
+    while (b > 0) {
+      if ((b & 1) != 0) ret = (ret * a) % m;
+      b >>= 1;
+      a = (a * a) % m;
+    }
+    return ret;
+  }
+  
   public static void swap(double[] vals, int i, int j) {
     double x = vals[i];
     vals[i] = vals[j];

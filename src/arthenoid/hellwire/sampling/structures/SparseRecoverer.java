@@ -1,11 +1,11 @@
 package arthenoid.hellwire.sampling.structures;
 
 import arthenoid.hellwire.sampling.MemoryUser;
+import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Context;
 
 public class SparseRecoverer implements MemoryUser {
-  protected final Context context;
-  protected final long n, r;
+  protected final long n, r, prime;
   protected long ℓ, z, p;
   
   @Override
@@ -15,18 +15,16 @@ public class SparseRecoverer implements MemoryUser {
   
   public SparseRecoverer(Context context, long n) {
     if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be more than n^3.");
-    this.context = context;
     this.n = n;
     r = context.randomP();
     ℓ = z = p = 0;
+    prime = context.getPrime();
   }
   
   public void update(long i, long w) {
-    if (i < 0 || i >= n) throw new IllegalArgumentException("Item outside of range (" + n + "): " + i);
-    long prime = context.getPrime();
-    ℓ = (ℓ + w) % prime;
-    z = (z + w * i) % prime;
-    p = (p + w * context.powP(r, i)) % prime;
+    ℓ += w;
+    z += w * i;
+    p = (p + w * Util.powMod(r, i, prime)) % prime;
   }
   
   public class IntegerResult {
@@ -40,12 +38,10 @@ public class SparseRecoverer implements MemoryUser {
   
   public IntegerResult query() {
     if (ℓ == 0 && z == 0 && p == 0) return new IntegerResult(0, 0);
-    long prime = context.getPrime();
-    if (ℓ < 0) ℓ += prime;
-    if (z < 0) z += prime;
     if (p < 0) p += prime;
+    if (z % ℓ != 0) return null;
     long i = z / ℓ;
-    if (i >= n || p != (ℓ * context.powP(r, i) + prime) % prime) return null;
+    if (i >= n || p != (ℓ * Util.powMod(r, i, prime)) % prime) return null;
     return new IntegerResult(i, ℓ);
   }
 }
