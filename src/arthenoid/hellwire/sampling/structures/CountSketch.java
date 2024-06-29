@@ -6,7 +6,6 @@ import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 
 public class CountSketch implements MemoryUser {
-  protected final Context context;
   protected final int d, t;
   protected final double[][] C;
   protected final Hash[] h;
@@ -14,13 +13,12 @@ public class CountSketch implements MemoryUser {
   
   @Override
   public int memoryUsed() {
-    int m = 5 + d * (t + 3);
+    int m = 4 + d * (t + 3);
     for (int i = 0; i < d; i++) m += h[i].memoryUsed();
     return m;
   }
   
   public CountSketch(Context context, int t, int d) {
-    this.context = context;
     this.t = t;
     this.d = d;
     C = new double[d][t];
@@ -30,7 +28,6 @@ public class CountSketch implements MemoryUser {
   }
   
   public CountSketch(CountSketch other) {
-    context = other.context;
     d = other.d;
     t = other.t;
     C = new double[d][t];
@@ -62,7 +59,7 @@ public class CountSketch implements MemoryUser {
   }
   
   public void merge(CountSketch other) {
-    if (other.context != context || other.h != h) throw new IllegalArgumentException("Sketches have different parameters.");
+    if (other.h != h) throw new IllegalArgumentException("Sketches have different parameters.");
     for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
   }
   

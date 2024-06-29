@@ -15,7 +15,6 @@ public class PrecisionSampler implements Sampler {
     return 2;
   }
   
-  protected final Context context;
   protected final long n;
   protected final double δ, ε;
   protected final Random uR;
@@ -27,7 +26,7 @@ public class PrecisionSampler implements Sampler {
   
   @Override
   public int memoryUsed() {
-    int mem = 9 + subsamplers.length + R.memoryUsed();
+    int mem = 8 + subsamplers.length + R.memoryUsed();
     for (Subsampler subsampler : subsamplers) mem += subsampler.memoryUsed();
     return mem;
   }
@@ -41,7 +40,7 @@ public class PrecisionSampler implements Sampler {
       return 2 + uH.memoryUsed() + D.memoryUsed();
     }
     
-    protected Subsampler() {
+    protected Subsampler(Context context) {
       uH = context.newHash();
       D = new CountSketch(context, Dt, Dd);
     }
@@ -73,7 +72,6 @@ public class PrecisionSampler implements Sampler {
   }
   
   public PrecisionSampler(Context context, long n, double δ, double ε) {
-    this.context = context;
     this.n = n;
     this.δ = δ;
     this.ε = ε;
@@ -83,7 +81,7 @@ public class PrecisionSampler implements Sampler {
     Dt = (int) Math.round(6 * m / logN);
     Dd = (int) Math.round(logN);
     subsamplers = new Subsampler[(int) Math.round(Math.log(1 / δ) / ε)];
-    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler();
+    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context);
     R = new CountSketch(context, Dt, Dd);
   }
   

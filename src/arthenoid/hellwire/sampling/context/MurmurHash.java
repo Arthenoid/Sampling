@@ -13,7 +13,7 @@ public class MurmurHash implements Hash {
   }
   
   public MurmurHash(Context c) {
-    this((int) c.random(1L << Integer.SIZE));
+    this((int) c.random());
   }
   
   public static int murmur32Scramble(int k) {

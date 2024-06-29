@@ -13,14 +13,13 @@ public class DistinctSampler implements Sampler {
     return 0;
   }
   
-  protected final Context context;
   protected final long n;
   protected final int log2n;
   protected final Subsampler[] subsamplers;
   
   @Override
   public int memoryUsed() {
-    int m = 4 + subsamplers.length;
+    int m = 3 + subsamplers.length;
     for (Subsampler subsampler : subsamplers) m += subsampler.memoryUsed();
     return m;
   }
@@ -36,7 +35,7 @@ public class DistinctSampler implements Sampler {
       return m;
     }
     
-    public Subsampler() {
+    public Subsampler(Context context) {
       h = context.newHash();
       D = new SparseRecoverer[log2n + 1];
       for (int ℓ = 0; ℓ <= log2n; ℓ++) D[ℓ] = new SparseRecoverer(context, n);
@@ -58,11 +57,10 @@ public class DistinctSampler implements Sampler {
   }
   
   public DistinctSampler(Context context, long n, double δ, double ε) {
-    this.context = context;
     this.n = n;
     log2n = Long.SIZE - Long.numberOfLeadingZeros(n - 1);
     subsamplers = new Subsampler[log2n]; //TODO Choose DistinctSampler repetitions number
-    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler();
+    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context);
   }
   
   @Override
