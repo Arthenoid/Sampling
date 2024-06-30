@@ -62,12 +62,4 @@ public class CountSketch implements MemoryUser {
     if (other.h != h) throw new IllegalArgumentException("Sketches have different parameters.");
     for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
   }
-  
-  public double norm(double p) {
-    for (int j = 0; j < d; j++) {
-      e[j] = 0;
-      for (int i = 0; i < t; i++) e[j] += Math.pow(Math.abs(C[j][i]), p);
-    }
-    return Math.pow(Util.mutMedian(e), 1 / p);
-  }
 }
