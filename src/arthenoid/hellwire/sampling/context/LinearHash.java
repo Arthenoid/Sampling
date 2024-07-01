@@ -20,6 +20,6 @@ public class LinearHash implements Hash {
   
   @Override
   public long toRange(long x, long bound) {
-    return ((a * x + b) % p) % bound;
+    return Long.remainderUnsigned(Long.remainderUnsigned(a * x + b, p), bound);
   }
 }

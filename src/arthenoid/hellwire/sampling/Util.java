@@ -10,9 +10,9 @@ public class Util {
   public static long powMod(long a, long b, long m) {
     long ret = 1;
     while (b > 0) {
-      if ((b & 1) != 0) ret = (ret * a) % m;
+      if ((b & 1) != 0) ret = Long.remainderUnsigned(ret * a, m);
       b >>= 1;
-      a = (a * a) % m;
+      a = Long.remainderUnsigned(a * a, m);
     }
     return ret;
   }
@@ -55,17 +55,8 @@ public class Util {
         if (vals[ifrom] >= pivot) swap(vals, ifrom, ito--);
           else ifrom++;
       }
-      if (ifrom > k) {
-        to = ifrom;
-      } else {
-        ito = to - 1;
-        while (ifrom <= ito) {
-          if (vals[ifrom] > pivot) swap(vals, ifrom, ito--);
-            else ifrom++;
-        }
-        if (ifrom > k) return pivot;
-        from = ifrom;
-      }
+      if (ifrom > k) to = ifrom;
+        else from = ifrom;
     }
   }
   

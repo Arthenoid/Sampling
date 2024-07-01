@@ -7,6 +7,9 @@ import arthenoid.hellwire.sampling.context.Hash;
 import java.util.Random;
 
 public class L2Sketch implements MemoryUser {
+  /** One over median of absolute value of normal standard distribution */
+  public static final double INV_BETA = 1.4826022185056018;
+  
   protected final int k;
   protected final double[] C, e;
   protected final Hash h;
@@ -40,7 +43,7 @@ public class L2Sketch implements MemoryUser {
   
   public double query() {
     for (int j = 0; j < k; j++) e[j] = Math.abs(C[j]);
-    return Util.mutMedian(e);
+    return Util.mutMedian(e) * INV_BETA;
   }
   
   public void merge(L2Sketch other) {
