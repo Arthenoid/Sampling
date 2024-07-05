@@ -26,31 +26,31 @@ public class DistinctSampler implements Sampler {
   
   protected class Subsampler implements MemoryUser {
     protected final Hash h;
-    protected final SparseRecoverer[] D;
+    protected final SparseRecoverer[] recoverers;
     
     @Override
     public int memoryUsed() {
       int m = 3 + log2n + h.memoryUsed();
-      for (SparseRecoverer sparseRecoverer : D) m += sparseRecoverer.memoryUsed();
+      for (SparseRecoverer sparseRecoverer : recoverers) m += sparseRecoverer.memoryUsed();
       return m;
     }
     
     public Subsampler(Context context) {
       h = context.newHash();
-      D = new SparseRecoverer[log2n + 1];
-      for (int ℓ = 0; ℓ <= log2n; ℓ++) D[ℓ] = new SparseRecoverer(context, n);
+      recoverers = new SparseRecoverer[log2n + 1];
+      for (int ℓ = 0; ℓ <= log2n; ℓ++) recoverers[ℓ] = new SparseRecoverer(context, n);
     }
     
-    public void update(long i, long w) {
-      D[0].update(i, w);
-      int ℓ = 1;
-      for (long hash = h.toBits(i, log2n); (hash & 1) > 0; hash >>>= 1) D[ℓ++].update(i, w);
+    public void update(long index, long frequencyChange) {
+      recoverers[0].update(index, frequencyChange);
+      int i = 1;
+      for (long hash = h.toBits(index, log2n); (hash & 1) > 0; hash >>>= 1) recoverers[i++].update(index, frequencyChange);
     }
     
     public Result query() {
-      for (int ℓ = 0; ℓ <= log2n; ℓ++) {
-        SparseRecoverer.IntegerResult res = D[ℓ].query();
-        if (res != null && res.w != 0) return new Result(res.i, res.w);
+      for (int i = 0; i <= log2n; i++) {
+        SparseRecoverer.IntegerResult res = recoverers[i].query();
+        if (res != null && res.frequency != 0) return new Result(res.index, res.frequency);
       }
       return null;
     }
@@ -64,8 +64,8 @@ public class DistinctSampler implements Sampler {
   }
   
   @Override
-  public void update(long i, long w) {
-    for (Subsampler subsampler : subsamplers) subsampler.update(i, w);
+  public void update(long index, long frequencyChange) {
+    for (Subsampler subsampler : subsamplers) subsampler.update(index, frequencyChange);
   }
   
   @Override

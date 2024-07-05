@@ -91,7 +91,7 @@ public class Run {
   }
   
   protected static String formatResult(Result result, InputProcessor ip) {
-    return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.i) + ", " + result.w + ")");
+    return result == null ? "QUERY FAILED" : ("(" + ip.decode(result.index) + ", " + result.frequency + ")");
   }
   
   protected static String formatQuery(Sampler sampler, InputProcessor ip) {
@@ -206,9 +206,9 @@ public class Run {
         for (Result r : result) if (r == null) {
           f++;
         } else {
-          int i = (int) r.i;
-          sampleFrequencies[i] += r.w;
-          sampleDeviations[i] += Math.abs(r.w - frequencies[i]);
+          int i = (int) r.index;
+          sampleFrequencies[i] += r.frequency;
+          sampleDeviations[i] += Math.abs(r.frequency - frequencies[i]);
           sampled[i]++;
         }
         if (f == result.length) failed++;

@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 public interface Sampler extends MemoryUser {
   double p();
-  void update(long i, long w);
+  void update(long index, long frequencyChange);
   Result query();
   Stream<Result> queryAll();
 }

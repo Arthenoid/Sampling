@@ -192,8 +192,8 @@ public class CLI {
       Result result = sampler.query();
       out.println("Final (after " + i + " updates): " + Run.formatResult(result, ip));
       if (Opt.gen.present() && result != null) {
-        Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.i);
-        out.printf(LOCALE, "This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.weight);
+        Format.Expectation expected = ((InputProcessor.Gen) ip).format.expected(sampler.p(), result.index);
+        out.printf(LOCALE, "This index was expected with probability %f and frequency around %f.\n", expected.probability, expected.frequency);
       }
     } catch (IOException e) {
       die("IO exception", e);

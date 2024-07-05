@@ -17,88 +17,86 @@ public class PrecisionSampler implements Sampler {
   }
   
   protected final long n;
-  protected final double δ, ε;
-  protected final Random uR;
-  protected final int m;
-  protected final int Dt;
-  protected final int Dd;
+  protected final double ε;
+  protected final Random precisionRandom;
+  protected final int sketchSize;
   protected final Subsampler[] subsamplers;
-  protected final L2Sketch R;
+  protected final L2Sketch normSketch;
   
   @Override
   public int memoryUsed() {
-    int mem = 8 + subsamplers.length + R.memoryUsed();
-    for (Subsampler subsampler : subsamplers) mem += subsampler.memoryUsed();
-    return mem;
+    int m = 6 + subsamplers.length + normSketch.memoryUsed();
+    for (Subsampler subsampler : subsamplers) m += subsampler.memoryUsed();
+    return m;
   }
   
   protected class Subsampler implements MemoryUser {
-    protected final Hash uH;
-    protected final CountSketch D;
+    protected final Hash precisionHash;
+    protected final CountSketch sketch;
     
     @Override
     public int memoryUsed() {
-      return 2 + uH.memoryUsed() + D.memoryUsed();
+      return 2 + precisionHash.memoryUsed() + sketch.memoryUsed();
     }
     
-    protected Subsampler(Context context) {
-      uH = context.newHash();
-      D = new CountSketch(context, Dt, Dd);
+    protected Subsampler(Context context, int sketchRows, int sketchColumns) {
+      precisionHash = context.newHash();
+      sketch = new CountSketch(context, sketchRows, sketchColumns);
     }
     
-    protected double u(long i) {
-      uR.setSeed(uH.toBits(i, Long.SIZE));
-      return uR.nextDouble();
+    protected double precision(long index) {
+      precisionRandom.setSeed(precisionHash.toBits(index, Long.SIZE));
+      return precisionRandom.nextDouble();
     }
     
-    public void update(long i, double w) {
-      D.update(i, w / Math.sqrt(u(i)));
+    public void update(long index, double frequencyChange) {
+      sketch.update(index, frequencyChange / Math.sqrt(precision(index)));
     }
     
-    public Result query(double r) {
-      PriorityQueue<Result> heap = new PriorityQueue<>((r1, r2) -> Double.compare(Math.abs(r1.w), Math.abs(r2.w)));
-      long topSize = Math.min(m, n);
-      for (long i = 0; i < topSize; i++) heap.add(new Result(i, D.query(i)));
-      double s = 0;
-      for (long i = m; i < n; i++) {
-        heap.add(new Result(i, D.query(i)));
-        double w = heap.remove().w;
-        s += w * w;
+    public Result query(double norm) {
+      PriorityQueue<Result> heap = new PriorityQueue<>((r1, r2) -> Double.compare(Math.abs(r1.frequency), Math.abs(r2.frequency)));
+      long topSize = Math.min(sketchSize, n);
+      for (long i = 0; i < topSize; i++) heap.add(new Result(i, sketch.query(i)));
+      double tailNorm = 0;
+      for (long i = sketchSize; i < n; i++) {
+        heap.add(new Result(i, sketch.query(i)));
+        double f = heap.remove().frequency;
+        tailNorm += f * f;
       }
-      s = Math.sqrt(s);
+      tailNorm = Math.sqrt(tailNorm);
       Result[] top = heap.toArray(Result[]::new);
       Result peak = top[0];
-      for (int i = 1; i < topSize; i++) if (Math.abs(top[i].w) > Math.abs(peak.w)) peak = top[i];
-      return s > Math.sqrt(ε * m) * r || Math.abs(peak.w) < r / Math.sqrt(ε) ? null : new Result(peak.i, peak.w * Math.sqrt(u(peak.i)));
+      for (int i = 1; i < topSize; i++) if (Math.abs(top[i].frequency) > Math.abs(peak.frequency)) peak = top[i];
+      return tailNorm > Math.sqrt(ε * sketchSize) * norm || Math.abs(peak.frequency) < norm / Math.sqrt(ε) ? null : new Result(peak.index, peak.frequency * Math.sqrt(precision(peak.index)));
     }
   }
   
   public PrecisionSampler(Context context, long n, double δ, double ε) {
     this.n = n;
-    this.δ = δ;
     this.ε = ε;
-    uR = new Random();
+    precisionRandom = new Random();
     double logN = Math.log(n);
-    m = (int) Math.round(50 * logN / ε);
-    Dt = (int) Math.round(6 * m / logN);
-    Dd = (int) Math.round(logN);
+    sketchSize = (int) Math.round(50 * logN / ε);
+    int
+      sketchRows = (int) Math.round(logN),
+      sketchColumns = (int) Math.round(6 * sketchSize / logN);
     subsamplers = new Subsampler[(int) Math.round(4 / ε)];
-    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context);
-    R = new L2Sketch(context, ε);
+    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context, sketchRows, sketchColumns);
+    normSketch = new L2Sketch(context, ε);
   }
   
   @Override
-  public void update(long i, long w) {
-    double ww = w;
-    R.update(i, ww);
-    for (Subsampler subsampler : subsamplers) subsampler.update(i, ww);
+  public void update(long index, long frequencyChange) {
+    double realFrequencyChange = frequencyChange;
+    normSketch.update(index, realFrequencyChange);
+    for (Subsampler subsampler : subsamplers) subsampler.update(index, realFrequencyChange);
   }
   
   @Override
   public Result query() {
-    double r = R.query();
+    double norm = normSketch.query();
     for (Subsampler subsampler : subsamplers) {
-      Result res = subsampler.query(r);
+      Result res = subsampler.query(norm);
       if (res != null) return res;
     }
     return null;
@@ -106,7 +104,7 @@ public class PrecisionSampler implements Sampler {
   
   @Override
   public Stream<Result> queryAll() {
-    double r = R.query();
-    return Stream.of(subsamplers).map(s -> s.query(r));
+    double norm = normSketch.query();
+    return Stream.of(subsamplers).map(s -> s.query(norm));
   }
 }

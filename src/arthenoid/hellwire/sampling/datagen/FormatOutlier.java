@@ -20,21 +20,21 @@ public class FormatOutlier extends Format {
     Random r = new Random(seed);
     if (updates > n) {
       for (long i = 0; i < updates; i++) {
-        long x = Util.randomLong(r, updates);
-        if (x < n) out.update(x, 1);
+        long index = Util.randomLong(r, updates);
+        if (index < n) out.update(index, 1);
           else out.update(outlier, outlierUpdate.applyAsLong(r));
       }
     } else {
-      long oi = Util.randomLong(r, updates);
-      for (long i = 0; i < oi; i++) out.update(Util.randomLong(r, n), 1);
+      long outlierIndex = Util.randomLong(r, updates);
+      for (long i = 0; i < outlierIndex; i++) out.update(Util.randomLong(r, n), 1);
       out.update(outlier, n);
-      for (long i = oi + 1; i < updates; i++) out.update(Util.randomLong(r, n), 1);
+      for (long i = outlierIndex + 1; i < updates; i++) out.update(Util.randomLong(r, n), 1);
     }
   }
   
   @Override
-  public Expectation expected(double p, long i) {
-    long w = i == outlier ? n : 1;
-    return new Expectation(w, Math.pow(w, p) / (Math.min(n, updates) - 1 + Math.pow(n, p)));
+  public Expectation expected(double p, long index) {
+    long f = index == outlier ? n : 1;
+    return new Expectation(f, Math.pow(f, p) / (Math.min(n, updates) - 1 + Math.pow(n, p)));
   }
 }

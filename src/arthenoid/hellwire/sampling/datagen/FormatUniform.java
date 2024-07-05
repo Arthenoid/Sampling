@@ -19,7 +19,7 @@ public class FormatUniform extends Format {
   }
   
   @Override
-  public Expectation expected(double p, long i) {
+  public Expectation expected(double p, long index) {
     return new Expectation(updates / (2.0 * sqrtN), 1.0 / Math.min(n, updates));
   }
 }

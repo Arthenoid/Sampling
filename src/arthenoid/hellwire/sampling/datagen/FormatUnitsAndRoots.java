@@ -30,9 +30,9 @@ public class FormatUnitsAndRoots extends Format {
   }
   
   @Override
-  public Expectation expected(double p, long i) {
-    double w = 1;
-    for (long j = 0; j < sqrtN; j++) if (rh.toRange(j, n) == i) w += sqrtN;
-    return new Expectation(w, Math.pow(w, p) / (n + sqrtN * (Math.pow(sqrtN, p) - 1)));
+  public Expectation expected(double p, long index) {
+    double f = 1;
+    for (long j = 0; j < sqrtN; j++) if (rh.toRange(j, n) == index) f += sqrtN;
+    return new Expectation(f, Math.pow(f, p) / (n + sqrtN * (Math.pow(sqrtN, p) - 1)));
   }
 }

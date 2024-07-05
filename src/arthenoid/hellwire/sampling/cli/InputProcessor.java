@@ -18,13 +18,13 @@ public interface InputProcessor {
   default void update(Sampler sampler) throws IOException {
     update(sampler::update);
   }
-  default String decode(long x) {
-    return Long.toString(x);
+  default String decode(long index) {
+    return Long.toString(index);
   }
   
   @FunctionalInterface
   public interface UpdateConsumer {
-    void update(long i, long w);
+    void update(long index, long frequencyChange);
   }
   
   class Text implements InputProcessor {
@@ -48,7 +48,6 @@ public interface InputProcessor {
   class Gen implements InputProcessor {
     protected final DataInputStream in;
     protected int i = 0;
-    protected long x, w;
     
     public final String name;
     public final Format format;
@@ -63,16 +62,10 @@ public interface InputProcessor {
       return i < format.updates;
     }
     
-    protected void read() throws IOException {
-      x = in.readLong();
-      w = in.readLong();
-      i++;
-    }
-    
     @Override
     public void update(UpdateConsumer consumer) throws IOException {
-      read();
-      consumer.update(x, w);
+      consumer.update(in.readLong(), in.readLong());
+      i++;
     }
   }
   
@@ -158,9 +151,9 @@ public interface InputProcessor {
     }
     
     @Override
-    public String decode(long x) {
+    public String decode(long index) {
       StringBuilder ret = new StringBuilder();
-      for (int i = 0; i < k; i++, x >>>= 2) switch ((int) (x & 0b11)) {
+      for (int i = 0; i < k; i++, index >>>= 2) switch ((int) (index & 0b11)) {
         case C:
           ret.append('C');
           break;

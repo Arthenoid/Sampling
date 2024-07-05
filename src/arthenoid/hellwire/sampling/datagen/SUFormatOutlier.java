@@ -12,18 +12,18 @@ public class SUFormatOutlier extends SUFormat {
     outlier = Util.randomLong(new Random(~seed), n);
   }
   
-  protected long targetWeight(long i) {
+  protected long targetFrequency(long i) {
     return i == outlier ? n : 1;
   }
   
   @Override
   public void generate(UpdateConsumer out) throws IOException {
-    for (long i = 0; i < n; i++) out.update(i, targetWeight(i));
+    for (long i = 0; i < n; i++) out.update(i, targetFrequency(i));
   }
   
   @Override
-  public Expectation expected(double p, long i) {
-    long w = targetWeight(i);
-    return new Expectation(w, Math.pow(w, p) / (n - 1 + Math.pow(n, p)));
+  public Expectation expected(double p, long index) {
+    long f = targetFrequency(index);
+    return new Expectation(f, Math.pow(f, p) / (n - 1 + Math.pow(n, p)));
   }
 }

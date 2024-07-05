@@ -19,7 +19,7 @@ public class SUFormatUniform extends SUFormat {
   }
   
   @Override
-  public Expectation expected(double p, long i) {
+  public Expectation expected(double p, long index) {
     return new Expectation(sqrtN / 2.0, 1.0 / n);
   }
 }

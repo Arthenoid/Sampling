@@ -6,33 +6,33 @@ import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 
 public class CountSketch implements MemoryUser {
-  protected final int d, t;
-  protected final double[][] C;
-  protected final Hash[] h;
-  protected final double[] e;
+  protected final int rows, columns;
+  protected final double[][] data;
+  protected final Hash[] hashes;
+  protected final double[] query;
   
   @Override
   public int memoryUsed() {
-    int m = 4 + d * (t + 3);
-    for (int i = 0; i < d; i++) m += h[i].memoryUsed();
+    int m = 4 + rows * (columns + 3);
+    for (int i = 0; i < rows; i++) m += hashes[i].memoryUsed();
     return m;
   }
   
-  public CountSketch(Context context, int t, int d) {
-    this.t = t;
-    this.d = d;
-    C = new double[d][t];
-    h = new Hash[d];
-    for (int j = 0; j < d; j++) h[j] = context.newHash();
-    e = new double[d];
+  public CountSketch(Context context, int rows, int columns) {
+    this.rows = rows;
+    this.columns = columns;
+    data = new double[rows][columns];
+    hashes = new Hash[rows];
+    for (int i = 0; i < rows; i++) hashes[i] = context.newHash();
+    query = new double[rows];
   }
   
   public CountSketch(CountSketch other) {
-    d = other.d;
-    t = other.t;
-    C = new double[d][t];
-    h = other.h;
-    e = new double[d];
+    rows = other.rows;
+    columns = other.columns;
+    data = new double[rows][columns];
+    hashes = other.hashes;
+    query = new double[rows];
   }
   
   protected static int hashCell(long hash) {
@@ -43,23 +43,23 @@ public class CountSketch implements MemoryUser {
     return ((hash & 1) << 1) - 1;
   }
   
-  public void update(long i, double w) {
-    for (int j = 0; j < d; j++) {
-      long hash = h[j].toRange(i, t << 1);
-      C[j][hashCell(hash)] += w * hashSign(hash);
+  public void update(long index, double frequencyChange) {
+    for (int i = 0; i < rows; i++) {
+      long hash = hashes[i].toRange(index, columns << 1);
+      data[i][hashCell(hash)] += hashSign(hash) * frequencyChange;
     }
   }
   
-  public double query(long x) {
-    for (int j = 0; j < d; j++) {
-      long hash = h[j].toRange(x, t << 1);
-      e[j] = C[j][hashCell(hash)] * hashSign(hash);
+  public double query(long index) {
+    for (int i = 0; i < rows; i++) {
+      long hash = hashes[i].toRange(index, columns << 1);
+      query[i] = data[i][hashCell(hash)] * hashSign(hash);
     }
-    return Util.mutMedian(e);
+    return Util.mutMedian(query);
   }
   
   public void merge(CountSketch other) {
-    if (other.h != h) throw new IllegalArgumentException("Sketches have different parameters.");
-    for (int j = 0; j < d; j++) for (int i = 0; i < t; i++) C[j][i] += other.C[j][i];
+    if (other.hashes != hashes) throw new IllegalArgumentException("Sketches have different parameters.");
+    for (int i = 0; i < rows; i++) for (int j = 0; j < columns; j++) data[i][j] += other.data[i][j];
   }
 }

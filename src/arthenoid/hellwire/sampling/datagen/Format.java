@@ -18,27 +18,27 @@ public abstract class Format {
   }
   
   public void generate(DataOutputStream out) throws IOException {
-    generate((x, w) -> {
-      out.writeLong(x);
-      out.writeLong(w);
+    generate((index, frequencyChange) -> {
+      out.writeLong(index);
+      out.writeLong(frequencyChange);
     });
   }
   
   @FunctionalInterface
   public interface UpdateConsumer {
-    void update(long x, long w) throws IOException;
+    void update(long index, long frequencyChange) throws IOException;
   }
   
   public abstract void generate(UpdateConsumer out) throws IOException;
   
   public static class Expectation {
-    public final double weight, probability;
+    public final double frequency, probability;
     
-    public Expectation(double weight, double probability) {
-      this.weight = weight;
+    public Expectation(double frequency, double probability) {
+      this.frequency = frequency;
       this.probability = probability;
     }
   }
   
-  public abstract Expectation expected(double p, long i);
+  public abstract Expectation expected(double p, long index);
 }

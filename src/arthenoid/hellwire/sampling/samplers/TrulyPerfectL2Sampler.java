@@ -16,22 +16,21 @@ public class TrulyPerfectL2Sampler implements Sampler {
   }
   
   protected final Context context;
-  protected final long n;
   protected final Subsampler[] subsamplers;
   protected final PriorityQueue<Subsampler> subsamplerPQ;
-  protected final Map<Long, Counter> c;
-  protected long t;
-  protected final MisraGries mg;
+  protected final Map<Long, Counter> counters;
+  protected long step;
+  protected final MisraGries maximumEstimator;
   
   @Override
   public int memoryUsed() {
-    int m = 7 + (int) Math.ceil(5.5 * subsamplers.length) + mg.memoryUsed();
+    int m = 6 + (int) Math.ceil(5.5 * subsamplers.length) + maximumEstimator.memoryUsed();
     for (Subsampler subsampler : subsamplers) m += subsampler.memoryUsed();
     return m;
   }
   
   protected class Subsampler implements MemoryUser {
-    protected long s = -1, d, tt = 1;
+    protected long selected = -1, difference, nextStep = 1;
     
     @Override
     public int memoryUsed() {
@@ -42,67 +41,68 @@ public class TrulyPerfectL2Sampler implements Sampler {
       return (long) Math.ceil(current / context.randomReal());
     }
     
-    protected void reset(long i, Counter ctr) {
-      if (i != s) {
-        if (--c.get(s).refs < 1) c.remove(s);
-        s = i;
+    protected void reset(long index, Counter ctr) {
+      if (index != selected) {
+        if (--counters.get(selected).refs < 1) counters.remove(selected);
+        selected = index;
         ctr.refs++;
       }
-      long ttt = nextAfter(tt);
-      if (ttt <= t) {
-        tt += context.random(t - tt + 1);
-        //tt += (long) Math.ceil(context.randomReal() * (t - tt + 1));
-        ttt = nextAfter(t);
+      long nextNextStep = nextAfter(nextStep);
+      if (nextNextStep <= step) {
+        nextStep += context.random(step - nextStep + 1);
+        //nextNextStep += (long) Math.ceil(context.randomReal() * (s tep - nextNextStep + 1));
+        nextNextStep = nextAfter(step);
       }
-      d = ctr.c - (t - tt);
-      tt = ttt;
+      difference = ctr.count - (step - nextStep);
+      nextStep = nextNextStep;
     }
     
-    protected Result query(long ζ) {
-      long cc = c.get(s).c - d;
-      return context.random(ζ) < 2 * cc + 1 ? new Result(s, 1.5 * cc + 0.75 + 0.25 / (2 * cc + 1)) : null;
+    protected Result query(long maxWeight) {
+      long
+        count = counters.get(selected).count - difference,
+        weight = 2 * count + 1;
+      return context.random(maxWeight) < weight ? new Result(selected, 1.5 * count + 0.75 + 0.25 / weight) : null;
     }
   }
   
   protected class Counter {
-    protected long c = 0;
+    protected long count = 0;
     protected int refs = 0;
   }
   
   public TrulyPerfectL2Sampler(Context context, long n, double δ, double ε) {
     this.context = context;
-    this.n = n;
-    t = 0;
+    step = 0;
     subsamplers = new Subsampler[(int) Math.sqrt(n)];
-    subsamplerPQ = new PriorityQueue<>((s1, s2) -> Long.compare(s1.tt, s2.tt));
+    subsamplerPQ = new PriorityQueue<>((s1, s2) -> Long.compare(s1.nextStep, s2.nextStep));
     for (int i = 0; i < subsamplers.length; i++) subsamplerPQ.add(subsamplers[i] = new Subsampler());
-    c = new HashMap<>();
+    counters = new HashMap<>();
     Counter ctr = new Counter();
     ctr.refs = subsamplers.length;
-    c.put(-1L, ctr);
-    mg = new MisraGries(subsamplers.length);
+    counters.put(-1L, ctr);
+    maximumEstimator = new MisraGries(subsamplers.length);
   }
   
   @Override
-  public void update(long i, long w) {
-    t += w;
-    Counter ctr = c.get(i);
-    if (ctr == null && subsamplerPQ.peek().tt > t) return;
-    if (ctr == null) c.put(i, ctr = new Counter());
-    ctr.c += w;
-    while (subsamplerPQ.peek().tt <= t) {
-      Subsampler ss = subsamplerPQ.poll();
-      ss.reset(i, ctr);
-      subsamplerPQ.add(ss);
+  public void update(long index, long frequencyChange) {
+    step += frequencyChange;
+    Counter ctr = counters.get(index);
+    if (ctr == null && subsamplerPQ.peek().nextStep > step) return;
+    if (ctr == null) counters.put(index, ctr = new Counter());
+    ctr.count += frequencyChange;
+    while (subsamplerPQ.peek().nextStep <= step) {
+      Subsampler subsampler = subsamplerPQ.poll();
+      subsampler.reset(index, ctr);
+      subsamplerPQ.add(subsampler);
     }
-    mg.update(i, w);
+    maximumEstimator.update(index, frequencyChange);
   }
   
   @Override
   public Result query() {
-    long ζ = 2 * mg.queryMax() - 1;
+    long maxWeight = 2 * maximumEstimator.queryMax() - 1;
     for (Subsampler subsampler : subsamplers) {
-      Result res = subsampler.query(ζ);
+      Result res = subsampler.query(maxWeight);
       if (res != null) return res;
     }
     return null;
@@ -110,7 +110,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
   
   @Override
   public Stream<Result> queryAll() {
-    long ζ = 2 * mg.queryMax() - 1;
-    return Stream.of(subsamplers).map(s -> s.query(ζ));
+    long maxWeight = 2 * maximumEstimator.queryMax() - 1;
+    return Stream.of(subsamplers).map(s -> s.query(maxWeight));
   }
 }

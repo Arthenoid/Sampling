@@ -6,7 +6,7 @@ import arthenoid.hellwire.sampling.context.Context;
 
 public class SparseRecoverer implements MemoryUser {
   protected final long n, r, prime;
-  protected long ℓ, z, p;
+  protected long sum, weightedSum, polynom;
   
   @Override
   public int memoryUsed() {
@@ -17,31 +17,31 @@ public class SparseRecoverer implements MemoryUser {
     if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be more than n^3.");
     this.n = n;
     r = context.randomP();
-    ℓ = z = p = 0;
+    sum = weightedSum = polynom = 0;
     prime = context.getPrime();
   }
   
-  public void update(long i, long w) {
-    ℓ += w;
-    z += w * i;
-    p = (p + w * Util.powMod(r, i, prime)) % prime;
+  public void update(long index, long frequencyChange) {
+    sum += frequencyChange;
+    weightedSum += frequencyChange * index;
+    polynom = (polynom + frequencyChange * Util.powMod(r, index, prime)) % prime;
   }
   
   public class IntegerResult {
-    public final long i, w;
+    public final long index, frequency;
 
-    public IntegerResult(long i, long w) {
-      this.i = i;
-      this.w = w;
+    public IntegerResult(long index, long frequency) {
+      this.index = index;
+      this.frequency = frequency;
     }
   }
   
   public IntegerResult query() {
-    if (ℓ == 0 && z == 0 && p == 0) return new IntegerResult(0, 0);
-    if (p < 0) p += prime;
-    if (z % ℓ != 0) return null;
-    long i = z / ℓ;
-    if (i >= n || p != (ℓ * Util.powMod(r, i, prime)) % prime) return null;
-    return new IntegerResult(i, ℓ);
+    if (sum == 0 && weightedSum == 0 && polynom == 0) return new IntegerResult(0, 0);
+    if (polynom < 0) polynom += prime;
+    if (weightedSum % sum != 0) return null;
+    long index = weightedSum / sum;
+    if (index >= n || polynom != (sum * Util.powMod(r, index, prime)) % prime) return null;
+    return new IntegerResult(index, sum);
   }
 }

@@ -16,7 +16,7 @@ public class FormatUnits extends Format {
   }
   
   @Override
-  public Expectation expected(double p, long i) {
+  public Expectation expected(double p, long index) {
     return new Expectation(1.0, 1.0 / Math.min(n, updates));
   }
 }

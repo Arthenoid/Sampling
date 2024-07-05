@@ -25,7 +25,7 @@ public class FormatPowerLaw extends Format {
   }
   
   @Override
-  public Expectation expected(double p, long i) {
+  public Expectation expected(double p, long index) {
     //TODO Power law expectation
     return new Expectation(0, -1);
   }
