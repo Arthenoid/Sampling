@@ -260,6 +260,13 @@ public class Run {
         IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / pNormCA)).sum() / 2,
         pNormCA / pNorm
       );
+      double statDev = 2 * IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> sampled[i] * Math.log(sampled[i] * pNorm / (samples * weights[i]))).sum();
+      out.printf(
+        LOCALE,
+        "Distribution stat deviation: %.4g\n- Per sample: %.4g\n", //TODO name
+        statDev,
+        statDev / samples
+      );
       printTime(out, "Result analysys", t);
       
       if (Opt.distribution.present()) {
