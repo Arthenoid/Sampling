@@ -73,7 +73,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
   public TrulyPerfectL2Sampler(Context context, long n, double δ, double ε) {
     this.context = context;
     step = 0;
-    subsamplers = new Subsampler[(int) Math.sqrt(n)];
+    subsamplers = new Subsampler[(int) (2 * Math.sqrt(n))];
     subsamplerPQ = new PriorityQueue<>((s1, s2) -> Long.compare(s1.nextStep, s2.nextStep));
     for (int i = 0; i < subsamplers.length; i++) subsamplerPQ.add(subsamplers[i] = new Subsampler());
     counters = new HashMap<>();
@@ -85,6 +85,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
   
   @Override
   public void update(long index, long frequencyChange) {
+    maximumEstimator.update(index, frequencyChange);
     step += frequencyChange;
     Counter ctr = counters.get(index);
     if (ctr == null && subsamplerPQ.peek().nextStep > step) return;
@@ -95,7 +96,6 @@ public class TrulyPerfectL2Sampler implements Sampler {
       subsampler.reset(index, ctr);
       subsamplerPQ.add(subsampler);
     }
-    maximumEstimator.update(index, frequencyChange);
   }
   
   @Override
