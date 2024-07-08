@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -113,18 +114,22 @@ public class Run {
       : String.format(LOCALE, "%d:%02d:%s", t, a, ret);
   }
   
-  protected static void printTime(PrintStream out, String label, long since) {
-    if (Opt.time.present()) out.printf(LOCALE, "[%s: %s]\n", label, formatTime(System.nanoTime() - since));
+  protected static void printTime(PrintStream out, String label, long t) {
+    if (Opt.time.present()) out.printf(LOCALE, "[%s: %s]\n", label, formatTime(t));
+  }
+  
+  protected static void printTimeSince(PrintStream out, String label, long since) {
+    printTime(out, label, System.nanoTime() - since);
   }
   
   @FunctionalInterface
   public interface SamplerFactory {
-    Sampler[] create(long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException;
+    Sampler create(int i, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException;
   }
   
   public static final Predicate<String> HAS_FASTA_EXTENSION = Pattern.compile(".*\\.fa(s(ta)?)?", Pattern.CASE_INSENSITIVE).asMatchPredicate();
   
-  protected static void testOn(Path file, SamplerFactory samplerFactory, PrintStream out) throws IOException {
+  protected static void testOn(Path file, int m, SamplerFactory samplerFactory, PrintStream out) throws IOException {
     out.println("================================");
     out.println("Testing on file: " + file);
     try (
@@ -156,25 +161,64 @@ public class Run {
         size = (int) format.updates;
       }
       
-      Sampler[] samplers;
+      double p;
       try {
-        samplers = samplerFactory.create(n);
+        Sampler sampler = samplerFactory.create(0, n);
+        out.println("Sampler memory usage: " + sampler.memoryUsed());
+        p = sampler.p();
       } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
         out.printf(LOCALE, "Sampler cannot be initialised: %s\n", CLI.getMessage(e));
         return;
       }
-      out.println("Sampler memory usage: " + samplers[0].memoryUsed());
       
-      long[] frequencies = new long[n];
-      
-      long t = System.nanoTime();
       int bufferSize = Math.min(Opt.buffer.value().intValue(), size);
       long[]
         buffIndex = new long[bufferSize],
         buffDiff = new long[bufferSize];
-      while (ip.hasData()) {
+      AtomicLong
+        update = new AtomicLong(),
+        query = new AtomicLong();
+      long[] frequencies = new long[n];
+      Result[][] results;
+      
+      long t = System.nanoTime();
+      if (bufferSize < size) {
+        Sampler[] samplers = new Sampler[m];
+        try {
+          for (int i = 0; i < m; i++) samplers[i] = samplerFactory.create(i, n);
+        } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+          out.printf(LOCALE, "Samplers cannot be initialised: %s\n", CLI.getMessage(e));
+          return;
+        }
+        
+        while (ip.hasData()) {
+          int fill = 0;
+          while (fill < bufferSize && ip.hasData()) {
+            int index = fill;
+            ip.update((i, w) -> {
+              frequencies[(int) i] += w;
+              buffIndex[index] = i;
+              buffDiff[index] = w;
+            });
+            fill++;
+          }
+          int to = fill;
+          Stream.of(samplers).unordered().parallel().forEach(s -> {
+            long ut = System.nanoTime();
+            for (int i = 0; i < to; i++) s.update(buffIndex[i], buffDiff[i]);
+            update.addAndGet(System.nanoTime() - ut);
+          });
+        }
+        
+        results = Stream.of(samplers).unordered().parallel().map(s -> {
+          long qt = System.nanoTime();
+          Result[] r = s.queryAll().toArray(Result[]::new);
+          query.addAndGet(System.nanoTime() - qt);
+          return r;
+        }).toArray(Result[][]::new);
+      } else {
         int fill = 0;
-        while (fill < bufferSize && ip.hasData()) {
+        while (ip.hasData()) {
           int index = fill;
           ip.update((i, w) -> {
             frequencies[(int) i] += w;
@@ -184,15 +228,27 @@ public class Run {
           fill++;
         }
         int to = fill;
-        Stream.of(samplers).unordered().parallel().forEach(s -> {
-          for (int i = 0; i < to; i++) s.update(buffIndex[i], buffDiff[i]);
-        });
+        
+        results = IntStream.range(0, m).unordered().parallel().mapToObj(i -> {
+          Sampler s;
+          try {
+            s = samplerFactory.create(i, n);
+          } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+          }
+          long uqt = System.nanoTime();
+          for (int j = 0; j < to; j++) s.update(buffIndex[j], buffDiff[j]);
+          update.addAndGet(System.nanoTime() - uqt);
+          uqt = System.nanoTime();
+          Result[] r = s.queryAll().toArray(Result[]::new);
+          query.addAndGet(System.nanoTime() - uqt);
+          return r;
+        }).toArray(Result[][]::new);
       }
-      printTime(out, "Update", t);
+      printTime(out, "Update average", update.get() / m);
+      printTime(out, "Query average", query.get() / m);
+      printTimeSince(out, "Update and query total", t);
       
-      t = System.nanoTime();
-      Result[][] results = Stream.of(samplers).unordered().parallel().map(s -> s.queryAll().toArray(Result[]::new)).toArray(Result[][]::new);
-      printTime(out, "Query", t);
       
       t = System.nanoTime();
       double[]
@@ -224,8 +280,8 @@ public class Run {
         LOCALE,
         "Failed samplers: %d/%d (%.2f%%)\n",
         failed,
-        samplers.length,
-        failed * 100.0 / samplers.length
+        m,
+        failed * 100.0 / m
       );
       out.printf(
         LOCALE,
@@ -248,7 +304,6 @@ public class Run {
         DoubleStream.of(sampleFrequencies).unordered().parallel().sum() / samples,
         IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
-      double p = samplers[0].p();
       for (int i = 0; i < n; i++) weights[i] = Math.pow(frequencies[i], p);
       double
         pNorm = DoubleStream.of(weights).unordered().parallel().sum(),
@@ -267,7 +322,7 @@ public class Run {
         statDev,
         statDev / samples
       );
-      printTime(out, "Result analysys", t);
+      printTimeSince(out, "Result analysys", t);
       
       if (Opt.distribution.present()) {
         t = System.nanoTime();
@@ -279,10 +334,10 @@ public class Run {
           weights[i] / pNorm,
           sampled[i] / (double) samples
         );
-        printTime(out, "Distribution", t);
+        printTimeSince(out, "Distribution", t);
       }
       
-      printTime(out, "Total", tt);
+      printTimeSince(out, "Total", tt);
     }
   }
 }

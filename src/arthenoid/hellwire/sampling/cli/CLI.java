@@ -1,7 +1,6 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
-import static arthenoid.hellwire.sampling.cli.Run.printTime;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.datagen.Format;
@@ -22,6 +21,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import static arthenoid.hellwire.sampling.cli.Run.printTimeSince;
 
 public class CLI {
   public static final Locale LOCALE = Locale.ROOT;
@@ -236,18 +236,8 @@ public class CLI {
       Random r = new Random(Opt.seed.value());
       long[] seeds = new long[m];
       for (int i = 0; i < m; i++) seeds[i] = Long.hashCode(r.nextLong());
-      samplerFactory = n -> {
-        Sampler[] samplers = new Sampler[m];
-        for (int i = 0; i < m; i++) samplers[i] = Run.createSampler(samplerConstructor, seeds[i], hasher, n);
-        return samplers;
-      };
-    } else {
-      samplerFactory = n -> {
-        Sampler[] samplers = new Sampler[m];
-        for (int i = 0; i < m; i++) samplers[i] = Run.createSampler(samplerConstructor, hasher, n);
-        return samplers;
-      };
-    }
+      samplerFactory = (i, n) -> Run.createSampler(samplerConstructor, seeds[i], hasher, n);
+    } else samplerFactory = (i, n) -> Run.createSampler(samplerConstructor, hasher, n);
     
     if (Opt.out.present() && Files.isDirectory(Opt.out.value())) Opt.out.set(Opt.out.value().resolve(String.format(
       LOCALE,
@@ -269,9 +259,9 @@ public class CLI {
         Opt.hash.or("Murmur"),
         Opt.seed.present() ? Opt.seed.value() : "random"
       );
-      for (Path file : data) Run.testOn(file, samplerFactory, out);
+      for (Path file : data) Run.testOn(file, m, samplerFactory, out);
       out.println("================================");
-      printTime(out, "All files total", t);
+      printTimeSince(out, "All files total", t);
     } catch (IOException e) {
       die("IO exception", e);
     }
