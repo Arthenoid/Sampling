@@ -17,7 +17,7 @@ public class PrecisionSampler implements Sampler {
   }
   
   protected final long n;
-  protected final double ε;
+  protected final double relativeError;
   protected final Random precisionRandom;
   protected final int sketchSize;
   protected final Subsampler[] subsamplers;
@@ -67,22 +67,22 @@ public class PrecisionSampler implements Sampler {
       Result[] top = heap.toArray(Result[]::new);
       Result peak = top[0];
       for (int i = 1; i < topSize; i++) if (Math.abs(top[i].frequency) > Math.abs(peak.frequency)) peak = top[i];
-      return tailNorm > Math.sqrt(ε * sketchSize) * norm || Math.abs(peak.frequency) < norm / Math.sqrt(ε) ? null : new Result(peak.index, peak.frequency * Math.sqrt(precision(peak.index)));
+      return tailNorm > Math.sqrt(relativeError * sketchSize) * norm || Math.abs(peak.frequency) < norm / Math.sqrt(relativeError) ? null : new Result(peak.index, peak.frequency * Math.sqrt(precision(peak.index)));
     }
   }
   
-  public PrecisionSampler(Context context, long n, double δ, double ε) {
+  public PrecisionSampler(Context context, long n, double relativeError, double failureProbability) {
     this.n = n;
-    this.ε = ε;
+    this.relativeError = relativeError;
     precisionRandom = new Random();
     double logN = Math.log(n);
-    sketchSize = (int) Math.round(50 * logN / ε);
+    sketchSize = (int) Math.round(50 * logN / relativeError);
     int
       sketchRows = (int) Math.round(logN),
       sketchColumns = (int) Math.round(6 * sketchSize / logN);
-    subsamplers = new Subsampler[(int) Math.round(4 / ε)];
+    subsamplers = new Subsampler[(int) Math.round(4 / relativeError)];
     for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context, sketchRows, sketchColumns);
-    normSketch = new L2Sketch(context, ε);
+    normSketch = new L2Sketch(context, relativeError);
   }
   
   @Override

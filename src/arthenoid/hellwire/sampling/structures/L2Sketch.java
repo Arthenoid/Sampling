@@ -20,8 +20,8 @@ public class L2Sketch implements MemoryUser {
     return 5 + 2 * cells + h.memoryUsed();
   }
   
-  public L2Sketch(Context context, double ε) {
-    cells = (int) (8 * Math.log(1 / ε));
+  public L2Sketch(Context context, double relativeError) {
+    cells = (int) (8 * Math.log(1 / relativeError));
     data = new double[cells];
     query = new double[cells];
     h = context.newHash();

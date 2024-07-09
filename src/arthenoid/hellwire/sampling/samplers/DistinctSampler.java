@@ -56,7 +56,7 @@ public class DistinctSampler implements Sampler {
     }
   }
   
-  public DistinctSampler(Context context, long n, double δ, double ε) {
+  public DistinctSampler(Context context, long n, double relativeError, double failureProbability) {
     this.n = n;
     log2n = Long.SIZE - Long.numberOfLeadingZeros(n - 1);
     subsamplers = new Subsampler[log2n]; //TODO Choose DistinctSampler repetitions number

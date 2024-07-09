@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
+import static arthenoid.hellwire.sampling.cli.Run.printTimeSince;
 import arthenoid.hellwire.sampling.context.Context;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.datagen.Format;
@@ -21,7 +22,6 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import static arthenoid.hellwire.sampling.cli.Run.printTimeSince;
 
 public class CLI {
   public static final Locale LOCALE = Locale.ROOT;
@@ -127,8 +127,8 @@ public class CLI {
       Opt.out,
       Opt.period,
       Opt.domainSize,
-      Opt.delta,
-      Opt.epsilon,
+      Opt.failureProbability,
+      Opt.relativeError,
       Opt.prime,
       Opt.hash,
       Opt.seed,
@@ -213,12 +213,11 @@ public class CLI {
       die("IO exception", e);
       return;
     }
-    ArgParser ap = ArgParser.create(
-      Opt.out,
+    ArgParser ap = ArgParser.create(Opt.out,
       Opt.time,
       Opt.distribution,
-      Opt.delta,
-      Opt.epsilon,
+      Opt.failureProbability,
+      Opt.relativeError,
       Opt.prime,
       Opt.hash,
       Opt.seed,
@@ -251,10 +250,10 @@ public class CLI {
       long t = System.nanoTime();
       out.printf(
         LOCALE,
-        "Testing %sSampler\nDelta:   %.2g\nEpsilon: %.2g\nPrime:   %d\nHash:    %s\nSeed:    %s\n",
+        "Testing %sSampler\nRelative error:      %.2g\nFailure probability: %.2g\nPrime:               %d\nHash:                %s\nSeed:                %s\n",
         samplerName,
-        Opt.delta.value(),
-        Opt.epsilon.value(),
+        Opt.relativeError.value(),
+        Opt.failureProbability.value(),
         Opt.prime.value(),
         Opt.hash.or("Murmur"),
         Opt.seed.present() ? Opt.seed.value() : "random"

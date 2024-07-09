@@ -102,7 +102,7 @@ public class Opt {
     samplers = Val.newPositiveIntegral("samplers", "m").set(1000L),
     buffer = Val.newPositiveIntegral("buffer", "b").set(1000000L);
   public static final Val<Double>
-    delta = Val.newPositiveReal("delta", "d", "δ").set(1e-2),
-    epsilon = Val.newPositiveReal("epsilon", "e", "ε").set(1e-2);
+    relativeError = Val.newPositiveReal("relative-error", "r", "ε").set(1e-2),
+    failureProbability = Val.newPositiveReal("failure-probability", "f", "δ").set(1e-2);
   public static final Val<String> hash = Val.newString("hash", "h");
 }

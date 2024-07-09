@@ -16,11 +16,11 @@ public class TrulyPerfectL2Sampler implements Sampler {
   }
   
   protected final Context context;
+  protected final MisraGries maximumEstimator;
   protected final Subsampler[] subsamplers;
   protected final PriorityQueue<Subsampler> subsamplerPQ;
   protected final Map<Long, Counter> counters;
   protected long step;
-  protected final MisraGries maximumEstimator;
   
   @Override
   public int memoryUsed() {
@@ -70,17 +70,18 @@ public class TrulyPerfectL2Sampler implements Sampler {
     protected int refs = 0;
   }
   
-  public TrulyPerfectL2Sampler(Context context, long n, double δ, double ε) {
+  public TrulyPerfectL2Sampler(Context context, long n, double relativeError, double failureProbability) {
     this.context = context;
     step = 0;
-    subsamplers = new Subsampler[(int) (2 * Math.sqrt(n))];
+    double sqrtN = Math.sqrt(n);
+    maximumEstimator = new MisraGries((int) sqrtN);
+    subsamplers = new Subsampler[(int) (4 * sqrtN * Math.log(1 / failureProbability))];
     subsamplerPQ = new PriorityQueue<>((s1, s2) -> Long.compare(s1.nextStep, s2.nextStep));
     for (int i = 0; i < subsamplers.length; i++) subsamplerPQ.add(subsamplers[i] = new Subsampler());
     counters = new HashMap<>();
     Counter ctr = new Counter();
     ctr.refs = subsamplers.length;
     counters.put(-1L, ctr);
-    maximumEstimator = new MisraGries(subsamplers.length);
   }
   
   @Override

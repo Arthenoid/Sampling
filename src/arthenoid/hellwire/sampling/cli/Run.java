@@ -58,8 +58,8 @@ public class Run {
     return constructor.newInstance(
       context,
       n,
-      Opt.delta.value(),
-      Opt.epsilon.value()
+      Opt.relativeError.value(),
+      Opt.failureProbability.value()
     );
   }
   
