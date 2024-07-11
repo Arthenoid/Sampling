@@ -1,5 +1,6 @@
 package arthenoid.hellwire.sampling.datagen;
 
+import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Hash;
 import arthenoid.hellwire.sampling.context.MurmurHash;
 import java.io.IOException;
@@ -26,8 +27,8 @@ public class SUFormatUnitsAndRoots extends SUFormat {
   @Override
   public Expectation expected(double p, long index) {
     double total = 0;
-    for (long i = 0; i < n; i++) total += Math.pow(targetFrequency(i), p);
+    for (long i = 0; i < n; i++) total += Util.pow(targetFrequency(i), p);
     long f = targetFrequency(index);
-    return new Expectation(f, Math.pow(f, p) / total);
+    return new Expectation(f, Util.pow(f, p) / total);
   }
 }

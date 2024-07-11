@@ -1,6 +1,7 @@
 package arthenoid.hellwire.sampling.cli;
 
 import arthenoid.hellwire.sampling.Result;
+import arthenoid.hellwire.sampling.Util;
 import static arthenoid.hellwire.sampling.cli.CLI.LOCALE;
 import static arthenoid.hellwire.sampling.cli.CLI.die;
 import arthenoid.hellwire.sampling.context.BasicContext;
@@ -304,7 +305,7 @@ public class Run {
         DoubleStream.of(sampleFrequencies).unordered().parallel().sum() / samples,
         IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
-      for (int i = 0; i < n; i++) weights[i] = Math.pow(frequencies[i], p);
+      for (int i = 0; i < n; i++) weights[i] = Util.pow(frequencies[i], p);
       double
         pNorm = DoubleStream.of(weights).unordered().parallel().sum(),
         pNormCA = IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> weights[i]).sum();

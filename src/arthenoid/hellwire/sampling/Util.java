@@ -7,6 +7,10 @@ import java.util.function.ToLongFunction;
 public class Util {
   private Util() {}
   
+  public static double pow(double a, double b) {
+    return b > 0 ? Math.pow(a, b) : a == 0 ? 0 : 1;
+  }
+  
   public static long powMod(long a, long b, long m) {
     long ret = 1;
     while (b > 0) {

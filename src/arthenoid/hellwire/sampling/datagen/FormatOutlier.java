@@ -35,6 +35,6 @@ public class FormatOutlier extends Format {
   @Override
   public Expectation expected(double p, long index) {
     long f = index == outlier ? n : 1;
-    return new Expectation(f, Math.pow(f, p) / (Math.min(n, updates) - 1 + Math.pow(n, p)));
+    return new Expectation(f, Util.pow(f, p) / (Math.min(n, updates) - 1 + Util.pow(n, p)));
   }
 }

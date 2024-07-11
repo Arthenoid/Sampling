@@ -24,6 +24,6 @@ public class SUFormatOutlier extends SUFormat {
   @Override
   public Expectation expected(double p, long index) {
     long f = targetFrequency(index);
-    return new Expectation(f, Math.pow(f, p) / (n - 1 + Math.pow(n, p)));
+    return new Expectation(f, Util.pow(f, p) / (n - 1 + Util.pow(n, p)));
   }
 }

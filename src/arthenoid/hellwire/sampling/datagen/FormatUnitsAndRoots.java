@@ -33,6 +33,6 @@ public class FormatUnitsAndRoots extends Format {
   public Expectation expected(double p, long index) {
     double f = 1;
     for (long j = 0; j < sqrtN; j++) if (rh.toRange(j, n) == index) f += sqrtN;
-    return new Expectation(f, Math.pow(f, p) / (n + sqrtN * (Math.pow(sqrtN, p) - 1)));
+    return new Expectation(f, Util.pow(f, p) / (n + sqrtN * (Util.pow(sqrtN, p) - 1)));
   }
 }
