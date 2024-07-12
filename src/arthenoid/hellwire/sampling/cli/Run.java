@@ -276,7 +276,6 @@ public class Run {
         out.println("All samplers failed.");
         return;
       }
-      long samples = total - failedSub;
       out.printf(
         LOCALE,
         "Failed samplers: %d/%d (%.2f%%)\n",
@@ -290,6 +289,12 @@ public class Run {
         failedSub,
         total,
         failedSub * 100.0 / total
+      );
+      long samples = total - failedSub;
+      out.printf(
+        LOCALE,
+        "Samples: %d\n",
+        samples
       );
       out.println("Frequency estimates (absolute ~ relative):");
       out.printf(

@@ -37,20 +37,24 @@ public class DistinctSampler implements Sampler {
     
     public Subsampler(Context context) {
       h = context.newHash();
-      recoverers = new SparseRecoverer[log2n + 1];
-      for (int ℓ = 0; ℓ <= log2n; ℓ++) recoverers[ℓ] = new SparseRecoverer(context, n);
+      recoverers = new SparseRecoverer[log2n + 2];
+      for (int ℓ = 0; ℓ <= log2n + 1; ℓ++) recoverers[ℓ] = new SparseRecoverer(context, n);
     }
     
     public void update(long index, long frequencyChange) {
       recoverers[0].update(index, frequencyChange);
       int i = 1;
-      for (long hash = h.toBits(index, log2n); (hash & 1) > 0; hash >>>= 1) recoverers[i++].update(index, frequencyChange);
+      for (long hash = h.toBits(index, log2n + 1); (hash & 1) > 0; hash >>>= 1) recoverers[i++].update(index, frequencyChange);
     }
     
     public Result query() {
-      for (int i = 0; i <= log2n; i++) {
+      for (int i = log2n + 1; i >= 0; i--) {
         SparseRecoverer.IntegerResult res = recoverers[i].query();
-        if (res != null && res.frequency != 0) return new Result(res.index, res.frequency);
+        if (res == null) break;
+        if (res.frequency != 0) {
+          if (i != 0 && ((h.toBits(res.index, log2n + 1) + 1) & ((1 << i) - 1)) != 0) break;
+          return new Result(res.index, res.frequency);
+        }
       }
       return null;
     }
