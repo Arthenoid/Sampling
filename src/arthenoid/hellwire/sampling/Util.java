@@ -15,7 +15,7 @@ public class Util {
     long ret = 1;
     while (b > 0) {
       if ((b & 1) != 0) ret = Long.remainderUnsigned(ret * a, m);
-      b >>= 1;
+      b >>>= 1;
       a = Long.remainderUnsigned(a * a, m);
     }
     return ret;
@@ -66,7 +66,6 @@ public class Util {
   
   public static long randomLong(Random random, long bound) {
     if (bound <= Integer.MAX_VALUE) return random.nextInt((int) bound);
-    if (bound <= 0) throw new IllegalArgumentException("Bound must be positive.");
     long q = bound - 1, s = random.nextLong() >>> 1, r;
     while (s - (r = s % bound) + q < 0) s = random.nextLong() >>> 1;
     return r;

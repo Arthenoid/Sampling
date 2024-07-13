@@ -9,7 +9,7 @@ public class TabulationHash implements Hash {
   public TabulationHash(Context c, int t, int k) {
     this.t = t;
     this.k = k;
-    m = (1L << k) - 1;
+    m = -1L >>> (Long.SIZE - k);
     this.T = new long[t][1 << k];
     for (long[] tab : T) for (int i = 0; i < tab.length; i++) tab[i] = c.random();
   }
@@ -23,6 +23,7 @@ public class TabulationHash implements Hash {
     return 3 + t + (t << k);
   }
   
+  @Override
   public long toLong(long x) {
     long h = 0;
     for (long[] tab : T) {
@@ -30,15 +31,5 @@ public class TabulationHash implements Hash {
       x >>>= k;
     }
     return h;
-  }
-  
-  @Override
-  public long toRange(long x, long bound) {
-    return Long.remainderUnsigned(toLong(x), bound);
-  }
-  
-  @Override
-  public long toBits(long x, int bits) {
-    return toLong(x) & ((1L << bits) - 1);
   }
 }

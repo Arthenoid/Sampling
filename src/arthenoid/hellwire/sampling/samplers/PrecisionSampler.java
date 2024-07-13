@@ -45,7 +45,7 @@ public class PrecisionSampler implements Sampler {
     }
     
     protected double precision(long index) {
-      precisionRandom.setSeed(precisionHash.toBits(index, Long.SIZE));
+      precisionRandom.setSeed(precisionHash.toLong(index));
       return precisionRandom.nextDouble();
     }
     

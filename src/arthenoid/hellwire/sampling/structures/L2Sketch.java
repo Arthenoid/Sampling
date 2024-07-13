@@ -37,7 +37,7 @@ public class L2Sketch implements MemoryUser {
   }
   
   public void update(long index, double frequencyChange) {
-    r.setSeed(h.toBits(index, Long.SIZE));
+    r.setSeed(h.toLong(index));
     for (int i = 0; i < cells; i++) data[i] += r.nextGaussian() * frequencyChange;
   }
   

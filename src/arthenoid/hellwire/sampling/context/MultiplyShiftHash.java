@@ -18,12 +18,17 @@ public class MultiplyShiftHash implements Hash {
   }
   
   @Override
+  public long toLong(long x) {
+    return a * x + b;
+  }
+  
+  @Override
   public long toRange(long x, long bound) {
-    return Long.remainderUnsigned(Long.reverse(a * x + b), bound);
+    return Long.remainderUnsigned(Long.reverse(toLong(x)), bound);
   }
   
   @Override
   public long toBits(long x, int bits) {
-    return (a * x + b) >>> (Long.SIZE - bits);
+    return toLong(x) >>> (Long.SIZE - bits);
   }
 }

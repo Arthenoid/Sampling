@@ -42,17 +42,24 @@ public class MurmurHash implements Hash {
   }
   
   @Override
+  public long toLong(long x) {
+    return (((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl);
+  }
+  
+  @Override
   public long toRange(long x, long bound) {
     return bound > Integer.MAX_VALUE
-      ? Long.remainderUnsigned((((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl), bound)
+      ? Long.remainderUnsigned(toLong(x), bound)
       : Integer.remainderUnsigned(to32bits(x), (int) bound);
   }
   
   @Override
   public long toBits(long x, int bits) {
-    long mask = bits < Long.SIZE ? (1L << bits) - 1 : -1;
-    return bits > Integer.SIZE
-      ? ((((long) to32bits(x)) << 32) | (((long) to32bits(~x)) & 0xFFFFFFFFl)) & mask
-      : to32bits(x) & mask;
+    long mask = -1L >>> (Long.SIZE - bits);
+    return (
+      bits > Integer.SIZE
+        ? toLong(x)
+        : to32bits(x)
+    ) & mask;
   }
 }

@@ -36,7 +36,7 @@ public class CountSketch implements MemoryUser {
   }
   
   protected static int hashCell(long hash) {
-    return (int) (hash >> 1);
+    return (int) (hash >>> 1);
   }
   
   protected static double hashSign(long hash) {
