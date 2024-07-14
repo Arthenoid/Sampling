@@ -60,10 +60,11 @@ public class DistinctSampler implements Sampler {
     }
   }
   
-  public DistinctSampler(Context context, long n, double relativeError, double failureProbability) {
+  public DistinctSampler(Context context, long n, double relativeError, double absoluteError, double failureProbability) {
+    if (7.0 * n / context.getPrime() > absoluteError) throw new IllegalArgumentException("Prime too small to guarantee relative error.");
     this.n = n;
     log2n = Long.SIZE - Long.numberOfLeadingZeros(n - 1);
-    subsamplers = new Subsampler[log2n]; //TODO Choose DistinctSampler repetitions number
+    subsamplers = new Subsampler[(int) (8 * Math.log(1 / failureProbability))];
     for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context);
   }
   

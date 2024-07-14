@@ -70,7 +70,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
     protected int refs = 0;
   }
   
-  public TrulyPerfectL2Sampler(Context context, long n, double relativeError, double failureProbability) {
+  public TrulyPerfectL2Sampler(Context context, long n, double relativeError, double absoluteError, double failureProbability) {
     this.context = context;
     step = 0;
     double sqrtN = Math.sqrt(n);

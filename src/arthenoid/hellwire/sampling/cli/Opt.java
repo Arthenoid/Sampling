@@ -103,6 +103,7 @@ public class Opt {
     buffer = Val.newPositiveIntegral("buffer", "b").set(1000000L);
   public static final Val<Double>
     relativeError = Val.newPositiveReal("relative-error", "r", "ε").set(1e-2),
+    absoluteError = Val.newPositiveReal("absolute-error", "a", "θ").set(1e-2),
     failureProbability = Val.newPositiveReal("failure-probability", "f", "δ").set(1e-2);
   public static final Val<String> hash = Val.newString("hash", "h");
 }

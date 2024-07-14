@@ -48,7 +48,7 @@ public class Run {
     try {
       return Class.forName("arthenoid.hellwire.sampling.samplers." + name + "Sampler")
         .asSubclass(Sampler.class)
-        .getConstructor(Context.class, long.class, double.class, double.class);
+        .getConstructor(Context.class, long.class, double.class, double.class, double.class);
     } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
       die("Sampler not found");
       return null;
@@ -60,6 +60,7 @@ public class Run {
       context,
       n,
       Opt.relativeError.value(),
+      Opt.absoluteError.value(),
       Opt.failureProbability.value()
     );
   }

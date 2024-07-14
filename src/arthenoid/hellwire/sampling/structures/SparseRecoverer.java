@@ -14,7 +14,6 @@ public class SparseRecoverer implements MemoryUser {
   }
   
   public SparseRecoverer(Context context, long n) {
-    if (context.getPrime() <= n * n * n) throw new IllegalArgumentException("Prime must be more than n^3.");
     this.n = n;
     r = context.randomP();
     sum = weightedSum = polynom = 0;

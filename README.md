@@ -54,6 +54,7 @@ java -jar Sampling.jar sample <sampler> [<argument>]...
 |          `--period, -P <p>`         | Prints query every *p* updates. If not specified, prints only at the end. |
 |       `--domain-size, -n <n>`       | Sets the domain size.                                                     |
 |    `--relative-error, -r, -ε <ε>`   | Sets the sampler relative error (ε). Default is 0.01 (1%).                |
+|    `--absolute-error, -a, -θ <θ>`   | Sets the sampler absolute error (θ). Default is 0.01 (1%).                |
 | `--failure-probability, -f, -δ <δ>` | Sets the sampler failure probability (δ). Default is 0.01 (1%).           |
 |          `--prime, -p <p>`          | Sets the prime number used for hashing and similar purposes.              |
 |         `--hash, -h <hash>`         | Sets the hash function. If not specified, MurmurHash is used.             |
@@ -93,6 +94,7 @@ If the input cointains FASTA files you have to specify the value for *k*.
 |             `--time, -t`            | Prints how long the updates and the query took.                                                                                                                |
 |         `--distribution, -D`        | Prints the expected and actual distributions. (Not recommended for large domain sizes.)                                                                        |
 |    `--relative-error, -r, -ε <ε>`   | Sets the sampler relative error (ε). Default is 0.01 (1%).                                                                                                     |
+|    `--absolute-error, -a, -θ <θ>`   | Sets the sampler absolute error (θ). Default is 0.01 (1%).                                                                                                     |
 | `--failure-probability, -f, -δ <δ>` | Sets the sampler failure probability (δ). Default is 0.01 (1%).                                                                                                |
 |          `--prime, -p <p>`          | Sets the prime number used for hashing and similar purposes.                                                                                                   |
 |         `--hash, -h <hash>`         | Sets the hash function. If not specified, MurmurHash is used.                                                                                                  |
