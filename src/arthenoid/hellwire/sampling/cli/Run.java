@@ -196,10 +196,10 @@ public class Run {
           int fill = 0;
           while (fill < bufferSize && ip.hasData()) {
             int index = fill;
-            ip.update((i, w) -> {
-              frequencies[(int) i] += w;
+            ip.update((i, f) -> {
+              frequencies[(int) i] += f;
               buffIndex[index] = i;
-              buffDiff[index] = w;
+              buffDiff[index] = f;
             });
             fill++;
           }
@@ -221,10 +221,10 @@ public class Run {
         int fill = 0;
         while (ip.hasData()) {
           int index = fill;
-          ip.update((i, w) -> {
-            frequencies[(int) i] += w;
+          ip.update((i, f) -> {
+            frequencies[(int) i] += f;
             buffIndex[index] = i;
-            buffDiff[index] = w;
+            buffDiff[index] = f;
           });
           fill++;
         }
@@ -253,9 +253,8 @@ public class Run {
       
       t = System.nanoTime();
       double[]
-        weights = new double[n],
         sampleFrequencies = new double[n],
-        sampleDeviations = new double[n];
+        sampleErrors = new double[n];
       long[] sampled = new long[n];
       long failed = 0, failedSub = 0, total = 0;
       for (Result[] result : results) {
@@ -265,7 +264,7 @@ public class Run {
         } else {
           int i = (int) r.index;
           sampleFrequencies[i] += r.frequency;
-          sampleDeviations[i] += Math.abs(r.frequency - frequencies[i]);
+          sampleErrors[i] += Math.abs(r.frequency - frequencies[i]);
           sampled[i]++;
         }
         if (f == result.length) failed++;
@@ -299,34 +298,40 @@ public class Run {
       out.println("Frequency estimates (absolute ~ relative):");
       out.printf(
         LOCALE,
-        "- Average sample deviation: %.3g ~ %.3g\n",
-        DoubleStream.of(sampleDeviations).unordered().parallel().sum() / samples,
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleDeviations[i] / frequencies[i]).sum() / samples
+        "- Average sample error: %.3g ~ %.3g\n",
+        DoubleStream.of(sampleErrors).unordered().parallel().sum() / samples,
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleErrors[i] / frequencies[i]).sum() / samples
       );
       for (int i = 0; i < n; i++) if (sampled[i] > 0) sampleFrequencies[i] = Math.abs(sampleFrequencies[i] - frequencies[i] * sampled[i]);
       out.printf(
         LOCALE,
-        "- Average index average deviation: %.3g ~ %.3g\n",
+        "- Average index average error: %.3g ~ %.3g\n",
         DoubleStream.of(sampleFrequencies).unordered().parallel().sum() / samples,
         IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
+      double[]
+        weights = new double[n],
+        probabilities = new double[n],
+        sampleShares = new double[n];
       for (int i = 0; i < n; i++) weights[i] = Util.pow(frequencies[i], p);
       double
         pNorm = DoubleStream.of(weights).unordered().parallel().sum(),
         pNormCA = IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> weights[i]).sum();
+      for (int i = 0; i < n; i++) {
+        probabilities[i] = weights[i] / pNorm;
+        sampleShares[i] = sampled[i] / (double) samples;
+      }
       out.printf(
         LOCALE,
-        "Distribution deviation: %.4g\n- Coverage adjusted: %.4g with %.4g coverage\n",
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / pNorm)).sum() / 2,
-        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> Math.abs(sampled[i] / (double) samples - weights[i] / pNormCA)).sum() / 2,
+        "Total variation distance: %.4g\n- Coverage adjusted: %.4g with %.4g coverage\n",
+        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> Math.abs(sampleShares[i] - probabilities[i])).sum() / 2,
+        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> Math.abs(sampleShares[i] - weights[i] / pNormCA)).sum() / 2,
         pNormCA / pNorm
       );
-      double statDev = 2 * IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> sampled[i] * Math.log(sampled[i] * pNorm / (samples * weights[i]))).sum();
       out.printf(
         LOCALE,
-        "Distribution stat deviation: %.4g\n- Per sample: %.4g\n", //TODO name
-        statDev,
-        statDev / samples
+        "Kullback-Leibler divergence: %.4g\n",
+        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> sampleShares[i] * Math.log(sampleShares[i] / probabilities[i])).sum()
       );
       printTimeSince(out, "Result analysys", t);
       
@@ -337,8 +342,8 @@ public class Run {
           LOCALE,
           "- %d:\n  - Expected: %.3g\n  - Actual:   %.3g\n",
           i,
-          weights[i] / pNorm,
-          sampled[i] / (double) samples
+          probabilities[i],
+          sampleShares[i]
         );
         printTimeSince(out, "Distribution", t);
       }
