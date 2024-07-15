@@ -301,14 +301,14 @@ public class Run {
         LOCALE,
         "- Average sample error: %.3g ~ %.3g\n",
         DoubleStream.of(sampleErrors).unordered().parallel().sum() / samples,
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleErrors[i] / frequencies[i]).sum() / samples
+        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> sampleErrors[i] / frequencies[i]).sum() / samples
       );
       for (int i = 0; i < n; i++) if (sampled[i] > 0) sampleFrequencies[i] = Math.abs(sampleFrequencies[i] - frequencies[i] * sampled[i]);
       out.printf(
         LOCALE,
         "- Average index average error: %.3g ~ %.3g\n",
         DoubleStream.of(sampleFrequencies).unordered().parallel().sum() / samples,
-        IntStream.range(0, n).unordered().parallel().mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
+        IntStream.range(0, n).unordered().parallel().filter(i -> sampled[i] > 0).mapToDouble(i -> sampleFrequencies[i] / frequencies[i]).sum() / samples
       );
       double[]
         weights = new double[n],
