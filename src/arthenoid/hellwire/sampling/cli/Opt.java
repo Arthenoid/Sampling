@@ -94,9 +94,8 @@ public class Opt {
     in = Val.newPath("in", "i"),
     out = Val.newPath("out", "o");
   public static final Val<Long>
-    period = Val.newPositiveIntegral("period", "P").set(Long.MAX_VALUE),
+    period = Val.newPositiveIntegral("period", "p").set(Long.MAX_VALUE),
     domainSize = Val.newPositiveIntegral("domain-size", "n"),
-    prime = Val.newPositiveIntegral("prime", "p").set(1199256178700994257L),
     seed = Val.newIntegral("seed", "s"),
     kMer = Val.newPositiveIntegral("k-mer", "k"),
     samplers = Val.newPositiveIntegral("samplers", "m").set(1000L),

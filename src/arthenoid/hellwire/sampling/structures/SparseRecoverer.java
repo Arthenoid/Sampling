@@ -5,6 +5,22 @@ import arthenoid.hellwire.sampling.Util;
 import arthenoid.hellwire.sampling.context.Context;
 
 public class SparseRecoverer implements MemoryUser {
+  protected static final long[] PRIMES = new long[] {
+    151,
+    36857,
+    8746519,
+    3445524211L,
+    888858060049L,
+    199279949697637L,
+    51066190452443059L,
+    6804604908702072427L
+  };
+  
+  public static long getPrime(long n, double falsePositiveProbability) {
+    for (long prime : PRIMES) if (prime >= n / falsePositiveProbability) return prime;
+    throw new IllegalArgumentException("Large enough prime not available");
+  }
+  
   protected final long n, r, prime;
   protected long sum, weightedSum, polynom;
   
@@ -13,11 +29,15 @@ public class SparseRecoverer implements MemoryUser {
     return 6;
   }
   
-  public SparseRecoverer(Context context, long n) {
+  public SparseRecoverer(Context context, long n, long prime) {
     this.n = n;
-    r = context.randomP();
+    r = context.random(prime);
     sum = weightedSum = polynom = 0;
-    prime = context.getPrime();
+    this.prime = prime;
+  }
+  
+  public SparseRecoverer(Context context, long n, double falsePositiveProbability) {
+    this(context, n, getPrime(n, falsePositiveProbability));
   }
   
   public void update(long index, long frequencyChange) {
@@ -40,7 +60,7 @@ public class SparseRecoverer implements MemoryUser {
     if (polynom < 0) polynom += prime;
     if (weightedSum % sum != 0) return null;
     long index = weightedSum / sum;
-    if (index >= n || polynom != (sum * Util.powMod(r, index, prime)) % prime) return null;
+    if (index < 0|| index >= n || polynom != (sum * Util.powMod(r, index, prime)) % prime) return null;
     return new IntegerResult(index, sum);
   }
 }

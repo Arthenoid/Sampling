@@ -51,12 +51,11 @@ java -jar Sampling.jar sample <sampler> [<argument>]...
 | :---------------------------------: | :------------------------------------------------------------------------ |
 |          `--in, -i <path>`          | Reads updates from the given file instead of the standard input.          |
 |          `--out, -o <path>`         | Outputs to the given file instead of the standard output.                 |
-|          `--period, -P <p>`         | Prints query every *p* updates. If not specified, prints only at the end. |
+|          `--period, -p <p>`         | Prints query every *p* updates. If not specified, prints only at the end. |
 |       `--domain-size, -n <n>`       | Sets the domain size.                                                     |
 |    `--relative-error, -r, -ε <ε>`   | Sets the sampler relative error (ε). Default is 0.01 (1%).                |
 |    `--absolute-error, -a, -θ <θ>`   | Sets the sampler absolute error (θ). Default is 0.01 (1%).                |
 | `--failure-probability, -f, -δ <δ>` | Sets the sampler failure probability (δ). Default is 0.01 (1%).           |
-|          `--prime, -p <p>`          | Sets the prime number used for hashing and similar purposes.              |
 |         `--hash, -h <hash>`         | Sets the hash function. If not specified, MurmurHash is used.             |
 |         `--seed, -s <seed>`         | Sets the sampler seed. If not specified, it is chosen randomly.           |
 |             `--gen, -g`             | Consumes generated test data.                                             |
@@ -96,7 +95,6 @@ If the input cointains FASTA files you have to specify the value for *k*.
 |    `--relative-error, -r, -ε <ε>`   | Sets the sampler relative error (ε). Default is 0.01 (1%).                                                                                                     |
 |    `--absolute-error, -a, -θ <θ>`   | Sets the sampler absolute error (θ). Default is 0.01 (1%).                                                                                                     |
 | `--failure-probability, -f, -δ <δ>` | Sets the sampler failure probability (δ). Default is 0.01 (1%).                                                                                                |
-|          `--prime, -p <p>`          | Sets the prime number used for hashing and similar purposes.                                                                                                   |
 |         `--hash, -h <hash>`         | Sets the hash function. If not specified, MurmurHash is used.                                                                                                  |
 |         `--seed, -s <seed>`         | Sets the seed used to derive seeds for individual samplers. If not specified, each sampler chooses randomly.                                                   |
 |      `--samplers, -m <number>`      | Sets the number of samplers run on each file. Default is 1000.                                                                                                 |

@@ -68,7 +68,7 @@ public class Run {
   protected static Sampler createSampler(Constructor<? extends Sampler> constructor, long seed, Function<Context, Hash> hasher, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException {
     return createSampler(
       constructor,
-      new BasicContext(Opt.prime.value(), seed, hasher),
+      new BasicContext(seed, hasher),
       n
     );
   }
@@ -76,7 +76,7 @@ public class Run {
   protected static Sampler createSampler(Constructor<? extends Sampler> constructor, Function<Context, Hash> hasher, long n) throws IllegalAccessException, IllegalArgumentException, InstantiationException, InvocationTargetException {
     return createSampler(
       constructor,
-      new BasicContext(Opt.prime.value(), hasher),
+      new BasicContext(hasher),
       n
     );
   }

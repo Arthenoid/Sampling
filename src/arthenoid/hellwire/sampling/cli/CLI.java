@@ -130,7 +130,6 @@ public class CLI {
       Opt.relativeError,
       Opt.absoluteError,
       Opt.failureProbability,
-      Opt.prime,
       Opt.hash,
       Opt.seed,
       Opt.gen,
@@ -220,7 +219,6 @@ public class CLI {
       Opt.relativeError,
       Opt.absoluteError,
       Opt.failureProbability,
-      Opt.prime,
       Opt.hash,
       Opt.seed,
       Opt.samplers,
@@ -252,12 +250,11 @@ public class CLI {
       long t = System.nanoTime();
       out.printf(
         LOCALE,
-        "Testing %sSampler\nRelative error:      %.2g\nAbsolute error:      %.2g\nFailure probability: %.2g\nPrime:               %d\nHash:                %s\nSeed:                %s\n",
+        "Testing %sSampler\nRelative error:      %.2g\nAbsolute error:      %.2g\nFailure probability: %.2g\nHash:                %s\nSeed:                %s\n",
         samplerName,
         Opt.relativeError.value(),
         Opt.absoluteError.value(),
         Opt.failureProbability.value(),
-        Opt.prime.value(),
         Opt.hash.or("Murmur"),
         Opt.seed.present() ? Opt.seed.value() : "random"
       );

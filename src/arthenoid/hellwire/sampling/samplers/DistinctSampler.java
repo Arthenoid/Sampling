@@ -35,10 +35,10 @@ public class DistinctSampler implements Sampler {
       return m;
     }
     
-    public Subsampler(Context context) {
+    public Subsampler(Context context, long prime) {
       h = context.newHash();
       recoverers = new SparseRecoverer[log2n + 2];
-      for (int ℓ = 0; ℓ <= log2n + 1; ℓ++) recoverers[ℓ] = new SparseRecoverer(context, n);
+      for (int ℓ = 0; ℓ <= log2n + 1; ℓ++) recoverers[ℓ] = new SparseRecoverer(context, n, prime);
     }
     
     public void update(long index, long frequencyChange) {
@@ -61,11 +61,11 @@ public class DistinctSampler implements Sampler {
   }
   
   public DistinctSampler(Context context, long n, double relativeError, double absoluteError, double failureProbability) {
-    if (7.0 * n / context.getPrime() > absoluteError) throw new IllegalArgumentException("Prime too small to guarantee relative error.");
     this.n = n;
     log2n = Long.SIZE - Long.numberOfLeadingZeros(n - 1);
     subsamplers = new Subsampler[(int) (8 * Math.log(1 / failureProbability))];
-    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context);
+    long prime = SparseRecoverer.getPrime(n, absoluteError / 7.0);
+    for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context, prime);
   }
   
   @Override
