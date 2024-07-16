@@ -76,11 +76,11 @@ public class PrecisionSampler implements Sampler {
     this.relativeError = relativeError;
     precisionRandom = new Random();
     double logN = Math.log(n);
-    sketchSize = (int) Math.round(50 * logN / relativeError);
+    sketchSize = (int) Math.round(15 * logN / relativeError);
     int
       sketchRows = (int) Math.round(logN),
-      sketchColumns = (int) Math.round(6 * sketchSize / logN);
-    subsamplers = new Subsampler[(int) Math.round(Math.log(1 / absoluteError) / relativeError)];
+      sketchColumns = 6 * sketchSize;
+    subsamplers = new Subsampler[(int) Math.round(Math.log(1 / failureProbability) / relativeError)];
     for (int i = 0; i < subsamplers.length; i++) subsamplers[i] = new Subsampler(context, sketchRows, sketchColumns);
     normSketch = new L2Sketch(context, relativeError);
   }
