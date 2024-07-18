@@ -1,5 +1,8 @@
 package arthenoid.hellwire.sampling.context;
 
+/**
+ * Algorithm adapted from https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
+ */
 public class MurmurHash implements Hash {
   protected final int seed;
   
