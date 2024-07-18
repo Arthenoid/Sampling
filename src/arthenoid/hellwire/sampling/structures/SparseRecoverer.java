@@ -16,6 +16,12 @@ public class SparseRecoverer implements MemoryUser {
     6804604908702072427L
   };
   
+  /**
+   * Chooses a prime number large enough to guarantee the probability of a false positive is small enough.
+   * @param n The domain size
+   * @param falsePositiveProbability The maximum accepted probability
+   * @return A prime
+   */
   public static long getPrime(long n, double falsePositiveProbability) {
     for (long prime : PRIMES) if (prime >= n / falsePositiveProbability) return prime;
     throw new IllegalArgumentException("Large enough prime not available");
