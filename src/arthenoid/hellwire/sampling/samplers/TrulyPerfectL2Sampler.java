@@ -49,7 +49,7 @@ public class TrulyPerfectL2Sampler implements Sampler {
       }
       long nextNextStep = nextAfter(nextStep);
       if (nextNextStep <= step) {
-        nextStep += context.random(step - nextStep + 1);
+        nextStep += 1 + context.random(step - nextStep);
         nextNextStep = nextAfter(step);
       }
       difference = ctr.count - (step - nextStep);
